@@ -1,0 +1,9 @@
+{
+  "self_name": "나",
+  "self_aliases": ["내가", "나", "제가", "저"],
+  "members": [
+    {"name": "엄마", "aliases": ["엄마", "어머니", "맘"]},
+    {"name": "아빠", "aliases": ["아빠", "아버지"]},
+    {"name": "동생", "aliases": ["동생"]}
+  ]
+}
