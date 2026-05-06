@@ -1,67 +1,28 @@
 """budget-guard: 장바구니 분류 + 사치품/반복구매/예산 경고.
 
 외부 API 의존 없이 키워드 기반으로 동작.
-한 함수 = 한 역할 원칙으로 작성.
+키워드는 config.json에서 관리 (비개발자도 수정 가능).
 """
 
 import re
 import sys
+import json
+from pathlib import Path
 from collections import defaultdict
 
 
-# 카테고리별 키워드 사전
-# 한국어 + 영어 양쪽 매칭. 신규 키워드는 여기에 추가만 하면 됨.
-CATEGORIES = {
-    "생필품": {
-        "keywords": [
-            # 위생용품
-            "휴지", "화장지", "물티슈", "기저귀", "생리대", "탐폰",
-            "치약", "칫솔", "샴푸", "린스", "비누", "바디워시", "폼클렌징",
-            # 세제/청소
-            "세제", "세탁세제", "섬유유연제", "주방세제", "락스", "청소포",
-            "고무장갑", "수세미", "쓰레기봉투",
-            # 식료품 (기본)
-            "쌀", "라면", "계란", "우유", "빵", "두부", "김치",
-            "생수", "식용유", "소금", "간장", "된장", "고추장",
-            "양파", "마늘", "감자", "당근", "배추", "무", "시금치",
-            "닭", "돼지고기", "소고기", "고등어", "갈치", "오징어",
-            "사과", "바나나", "달걀",
-        ],
-        "icon": "✅",
-        "label": "생필품",
-    },
-    "준생필품": {
-        "keywords": [
-            # 간식
-            "과자", "초콜릿", "사탕", "젤리", "쿠키", "비스킷", "껌", "스낵",
-            # 음료
-            "콜라", "사이다", "주스", "커피", "차 ", "음료", "에너지드링크",
-            "맥주", "와인", "소주",
-            # 조미료
-            "설탕", "후추", "참기름", "마요네즈", "케첩", "드레싱", "잼",
-        ],
-        "icon": "⚠️",
-        "label": "준생필품",
-    },
-    "사치품": {
-        "keywords": [
-            # 디저트/카페
-            "케이크", "마카롱", "도넛", "아이스크림", "타르트", "크로플",
-            "스타벅스", "투썸", "공차", "블루보틀",
-            # 브랜드 화장품
-            "샤넬", "디올", "에스티로더", "랑콤", "입생로랑", "톰포드",
-            "맥 립", "조말론", "바이레도",
-            "chanel", "dior", "ysl", "tom ford", "jo malone", "byredo",
-            # 명품
-            "구찌", "루이비통", "프라다", "버버리", "에르메스", "셀린느",
-            "gucci", "louis vuitton", "prada", "burberry", "hermes", "celine",
-            # 기타 충동구매 패턴
-            "한정판", "굿즈", "피규어", "콜라보",
-        ],
-        "icon": "🚨",
-        "label": "사치품",
-    },
-}
+# config.json 불러오기
+CONFIG_PATH = Path(__file__).parent / "config.json"
+try:
+    with open(CONFIG_PATH, "r", encoding="utf-8") as f:
+        CONFIG = json.load(f)
+    CATEGORIES = CONFIG["categories"]
+except FileNotFoundError:
+    print(f"config.json 파일을 찾을 수 없습니다: {CONFIG_PATH}")
+    CATEGORIES = {}
+except json.JSONDecodeError:
+    print(f"config.json 파일 형식이 올바르지 않습니다: {CONFIG_PATH}")
+    CATEGORIES = {}
 
 
 def parse_cart(text: str) -> list:
@@ -102,21 +63,23 @@ def parse_cart(text: str) -> list:
 
 
 def classify_item(name: str) -> str:
-    """품목명을 카테고리로 분류. 매칭 실패 시 '준생필품' 기본."""
+    """품목명을 config.json의 카테고리 기준으로 분류. 매칭 실패 시 '준생필품' 기본."""
+    if not CATEGORIES:
+        return "준생필품"
+    
     name_lower = name.lower()
     # 사치품을 먼저 체크 (브랜드 화장품이 '립스틱' 같은 일반어와 겹치지 않도록)
     for category in ("사치품", "생필품", "준생필품"):
-        for kw in CATEGORIES[category]["keywords"]:
+        if category not in CATEGORIES:
+            continue
+        for kw in CATEGORIES[category].get("keywords", []):
             if kw.lower() in name_lower:
                 return category
     return "준생필품"
 
 
 def check_repeat_purchase(items: list, history: dict | None = None) -> list:
-    """이번 달 누적 3회 이상 구매한 품목에 경고.
-
-    history: {"마카롱 6개": 2} 형태. 이번 카트에 같은 품목이 또 있으면 합산.
-    """
+    """이번 달 누적 3회 이상 구매한 품목에 경고."""
     history = history or {}
     warnings = []
     seen_in_cart = defaultdict(int)
@@ -159,6 +122,9 @@ def analyze_cart(
     history: dict | None = None,
 ) -> dict:
     """장바구니 분석 메인 함수."""
+    if not CATEGORIES:
+        return {"error": "config.json 파일이 제대로 로드되지 않았습니다."}
+    
     items = parse_cart(text)
     if not items:
         return {"error": "장바구니에서 품목을 찾을 수 없어요. 형식을 확인해주세요."}
@@ -170,7 +136,7 @@ def analyze_cart(
         classified.append({
             **item,
             "category": cat,
-            "icon": CATEGORIES[cat]["icon"],
+            "icon": CATEGORIES.get(cat, {}).get("icon", "❓"),
         })
         totals[cat]["count"] += 1
         totals[cat]["price"] += item["price"]
@@ -209,12 +175,13 @@ def format_report(result: dict) -> str:
     for cat in ("생필품", "준생필품", "사치품"):
         if cat not in result["totals"]:
             continue
-        info = CATEGORIES[cat]
+        info = CATEGORIES.get(cat, {})
+        icon = info.get("icon", "❓")
         t = result["totals"][cat]
         ratio = (t["price"] / total * 100) if total else 0
         bar = "█" * max(1, int(ratio / 5))
         out.append(
-            f"{info['icon']} {cat}: {t['count']}개 / {t['price']:,}원 "
+            f"{icon} {cat}: {t['count']}개 / {t['price']:,}원 "
             f"({ratio:.0f}%) {bar}"
         )
 
@@ -241,9 +208,6 @@ def format_report(result: dict) -> str:
 
 
 if __name__ == "__main__":
-    # 사용법:
-    #   python classifier.py --demo            데모 입력으로 동작 확인
-    #   python classifier.py < cart.txt        stdin으로 카트 받기
     if "--demo" in sys.argv:
         demo = """1. 휴지 24롤 - 18,000원
 2. 샤넬 립스틱 - 52,000원
