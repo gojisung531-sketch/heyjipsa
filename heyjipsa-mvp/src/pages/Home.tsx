@@ -59,7 +59,10 @@ export default function Home() {
       </header>
 
       {/* 카드 1: 이번 주 장보기 (가장 크게) */}
-      <Card onClick={() => navigate('/shopping')} className="mb-4 bg-navy text-white">
+      <div
+        onClick={() => navigate('/shopping')}
+        className="mb-4 cursor-pointer rounded-2xl bg-navy p-5 text-white shadow-sm transition active:scale-[0.99]"
+      >
         <div className="flex items-start justify-between">
           <div>
             <p className="text-sm text-white/70">🛒 이번 주 장보기</p>
@@ -77,7 +80,7 @@ export default function Home() {
               ? `📦 묶음 최적화로 배송비 ${won(opt.saved_vs_naive)} 절약`
               : '품목을 담고 배송비를 최적화해 보세요'}
         </div>
-      </Card>
+      </div>
 
       {/* 카드 2: 오늘의 집안일 */}
       <Card onClick={() => navigate('/checklist')} className="mb-4">
