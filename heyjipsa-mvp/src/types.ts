@@ -105,3 +105,30 @@ export interface Tip {
   tip: string;
   added: string; // YYYY-MM-DD
 }
+
+// ── 할 일 (voice-to-todo) ───────────────────────────────
+export type TodoCategory = '장보기' | '집안일' | '업무' | '경조사' | '기타';
+export type TodoPriority = '상' | '중' | '하';
+
+export interface Todo {
+  id: string;
+  category: TodoCategory | string;
+  item: string;
+  priority: TodoPriority;
+  deadline: string | null;
+  raw: string;
+  done: boolean;
+  createdAt: string;
+}
+
+// ── 구매 기록 (receipt-scanner 수동 입력 + purchase-pattern) ──
+export interface PurchaseRecord {
+  id: string;
+  date: string; // YYYY-MM-DD (날짜)
+  store: string; // 매장명
+  item: string; // 품목
+  qty: number; // 수량
+  unitPrice: number; // 단가
+  total: number; // 합계
+  category: string; // 카테고리
+}

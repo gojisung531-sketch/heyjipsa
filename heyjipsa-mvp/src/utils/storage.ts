@@ -9,6 +9,8 @@ export const STORAGE_KEYS = {
   FIXED_EXPENSES: 'heyjipsa_expenses', // FixedExpense[]
   BUDGET_HISTORY: 'heyjipsa_budget', // BudgetEntry[]
   ONBOARDING_DONE: 'heyjipsa_onboarded', // boolean
+  TODOS: 'heyjipsa_todos', // Todo[] (voice-to-todo)
+  PURCHASE_RECORDS: 'heyjipsa_purchases', // PurchaseRecord[] (구매 기록 → 패턴)
 } as const;
 
 export type StorageKey = (typeof STORAGE_KEYS)[keyof typeof STORAGE_KEYS];

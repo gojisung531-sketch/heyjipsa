@@ -1,13 +1,28 @@
-// 집안일 체크리스트 `/checklist`
+// 집안일 체크리스트 `/checklist` — 주기별 집안일 + 내 할일(자연어 캡처)
 import { useMemo, useState } from 'react';
 import { Navigate } from 'react-router-dom';
-import type { ChecklistState, HouseholdConfig, Period } from '../types';
+import type {
+  ChecklistState,
+  HouseholdConfig,
+  Period,
+  Todo,
+  TodoPriority,
+} from '../types';
 import { PageHeader } from '../components/Layout';
 import { ProgressBar } from '../components/ui';
-import { STORAGE_KEYS, loadJSON } from '../utils/storage';
+import { STORAGE_KEYS, loadJSON, saveJSON, uid } from '../utils/storage';
 import { buildChecklist } from '../utils/checklist';
 import { loadChecklistState, saveChecklistState } from '../utils/checklistState';
+import { parseBatch } from '../utils/todoParser';
 import { PERIODS, PERIOD_TAB_LABELS, PERIOD_LABELS } from '../data/templates';
+
+type Tab = Period | 'todos';
+
+const PRIORITY_STYLE: Record<TodoPriority, string> = {
+  상: 'bg-danger/10 text-danger',
+  중: 'bg-blue/10 text-blue',
+  하: 'bg-light text-muted',
+};
 
 export default function Checklist() {
   const config = loadJSON<HouseholdConfig | null>(
@@ -21,30 +36,55 @@ export default function Checklist() {
   );
 
   const [state, setState] = useState<ChecklistState>(() =>
-    config
-      ? loadChecklistState(config)
-      : { checked: [], dailyDate: '' },
+    config ? loadChecklistState(config) : { checked: [], dailyDate: '' },
   );
-  const [tab, setTab] = useState<Period>('daily');
+  const [tab, setTab] = useState<Tab>('daily');
+  const [todos, setTodos] = useState<Todo[]>(() =>
+    loadJSON<Todo[]>(STORAGE_KEYS.TODOS, []),
+  );
+  const [todoText, setTodoText] = useState('');
 
   if (!config || !byPeriod) return <Navigate to="/onboarding" replace />;
 
   const checkedSet = new Set(state.checked);
-
   const toggle = (id: string) => {
     const next = new Set(checkedSet);
     if (next.has(id)) next.delete(id);
     else next.add(id);
-    const newState: ChecklistState = {
-      checked: [...next],
-      dailyDate: state.dailyDate,
-    };
+    const newState: ChecklistState = { checked: [...next], dailyDate: state.dailyDate };
     setState(newState);
     saveChecklistState(newState);
   };
 
-  const items = byPeriod[tab];
+  const saveTodos = (next: Todo[]) => {
+    setTodos(next);
+    saveJSON(STORAGE_KEYS.TODOS, next);
+  };
+  const preview = todoText.trim() ? parseBatch(todoText) : [];
+  const addTodos = () => {
+    if (preview.length === 0) return;
+    const now = new Date().toISOString();
+    const created: Todo[] = preview.map((p) => ({
+      id: uid('todo'),
+      category: p.category,
+      item: p.item,
+      priority: p.priority,
+      deadline: p.deadline,
+      raw: p.raw,
+      done: false,
+      createdAt: now,
+    }));
+    saveTodos([...created, ...todos]);
+    setTodoText('');
+  };
+  const toggleTodo = (id: string) =>
+    saveTodos(todos.map((t) => (t.id === id ? { ...t, done: !t.done } : t)));
+  const removeTodo = (id: string) => saveTodos(todos.filter((t) => t.id !== id));
+
+  const isPeriod = tab !== 'todos';
+  const items = isPeriod ? byPeriod[tab] : [];
   const doneInTab = items.filter((i) => checkedSet.has(i.id)).length;
+  const openTodos = todos.filter((t) => !t.done).length;
 
   return (
     <div>
@@ -53,7 +93,6 @@ export default function Checklist() {
       {/* 탭 */}
       <div className="no-scrollbar -mx-1 mb-4 flex gap-2 overflow-x-auto px-1">
         {PERIODS.map((p) => {
-          const count = byPeriod[p].length;
           const active = tab === p;
           return (
             <button
@@ -65,65 +104,151 @@ export default function Checklist() {
             >
               {PERIOD_TAB_LABELS[p]}{' '}
               <span className={active ? 'text-white/70' : 'text-blue'}>
-                {count}
+                {byPeriod[p].length}
               </span>
             </button>
           );
         })}
+        <button
+          onClick={() => setTab('todos')}
+          className={`shrink-0 rounded-full px-4 py-2 text-sm font-semibold transition ${
+            tab === 'todos' ? 'bg-navy text-white' : 'bg-white text-muted'
+          }`}
+        >
+          내 할일{' '}
+          <span className={tab === 'todos' ? 'text-white/70' : 'text-blue'}>
+            {openTodos}
+          </span>
+        </button>
       </div>
 
-      {/* 진행률 */}
-      <div className="mb-4 rounded-2xl bg-white p-4">
-        <div className="mb-2 flex items-center justify-between text-sm">
-          <span className="font-semibold text-ink">
-            {PERIOD_LABELS[tab]} 진행률
-          </span>
-          <span className="text-muted">
-            {doneInTab}/{items.length}
-          </span>
-        </div>
-        <ProgressBar value={doneInTab} total={items.length} />
-      </div>
+      {isPeriod ? (
+        <>
+          {/* 진행률 */}
+          <div className="mb-4 rounded-2xl bg-white p-4">
+            <div className="mb-2 flex items-center justify-between text-sm">
+              <span className="font-semibold text-ink">
+                {PERIOD_LABELS[tab]} 진행률
+              </span>
+              <span className="text-muted">
+                {doneInTab}/{items.length}
+              </span>
+            </div>
+            <ProgressBar value={doneInTab} total={items.length} />
+          </div>
 
-      {/* 항목 리스트 */}
-      <ul className="space-y-2">
-        {items.map((it) => {
-          const done = checkedSet.has(it.id);
-          return (
-            <li key={it.id}>
-              <button
-                onClick={() => toggle(it.id)}
-                className="flex w-full items-center gap-3 rounded-2xl bg-white px-4 py-3 text-left transition active:scale-[0.99]"
+          {/* 항목 리스트 */}
+          <ul className="space-y-2">
+            {items.map((it) => {
+              const done = checkedSet.has(it.id);
+              return (
+                <li key={it.id}>
+                  <button
+                    onClick={() => toggle(it.id)}
+                    className="flex w-full items-center gap-3 rounded-2xl bg-white px-4 py-3 text-left transition active:scale-[0.99]"
+                  >
+                    <span
+                      className={`grid h-6 w-6 shrink-0 place-items-center rounded-full border-2 text-xs transition ${
+                        done ? 'border-mint bg-mint text-white' : 'border-gray-300 text-transparent'
+                      }`}
+                    >
+                      ✓
+                    </span>
+                    <span className={`flex-1 ${done ? 'text-muted line-through' : 'text-ink'}`}>
+                      {it.name}
+                    </span>
+                    <span className="rounded-full bg-light px-2.5 py-0.5 text-[11px] text-blue">
+                      {it.category}
+                    </span>
+                  </button>
+                </li>
+              );
+            })}
+            {items.length === 0 && (
+              <li className="rounded-2xl bg-white p-6 text-center text-sm text-muted">
+                이 주기에는 할 일이 없어요 🎉
+              </li>
+            )}
+          </ul>
+        </>
+      ) : (
+        <>
+          {/* 자연어 빠른 추가 */}
+          <textarea
+            value={todoText}
+            onChange={(e) => setTodoText(e.target.value)}
+            rows={2}
+            placeholder="할 일을 말하듯 적어보세요. 예: 금요일까지 보고서 제출하고 휴지 사야돼"
+            className="w-full resize-none rounded-2xl border border-light bg-white px-4 py-3 text-sm outline-none focus:border-blue"
+          />
+          {preview.length > 0 && (
+            <div className="mt-2 space-y-1 rounded-xl bg-cream px-3 py-2 text-xs text-muted">
+              {preview.map((p, i) => (
+                <div key={i}>
+                  <b className="text-ink">{p.item}</b> · {p.category} · 우선순위 {p.priority}
+                  {p.deadline ? ` · ${p.deadline}` : ''}
+                </div>
+              ))}
+            </div>
+          )}
+          <button
+            onClick={addTodos}
+            disabled={preview.length === 0}
+            className="mt-3 w-full rounded-xl bg-navy py-3 text-base font-semibold text-white transition active:scale-[0.98] disabled:opacity-40"
+          >
+            할 일 추가
+          </button>
+
+          {/* 할일 목록 */}
+          <ul className="mt-5 space-y-2">
+            {todos.map((t) => (
+              <li
+                key={t.id}
+                className="flex items-center gap-3 rounded-2xl bg-white px-4 py-3"
               >
-                <span
+                <button
+                  onClick={() => toggleTodo(t.id)}
                   className={`grid h-6 w-6 shrink-0 place-items-center rounded-full border-2 text-xs transition ${
-                    done
-                      ? 'border-mint bg-mint text-white'
-                      : 'border-gray-300 text-transparent'
+                    t.done ? 'border-mint bg-mint text-white' : 'border-gray-300 text-transparent'
                   }`}
                 >
                   ✓
-                </span>
-                <span
-                  className={`flex-1 ${
-                    done ? 'text-muted line-through' : 'text-ink'
-                  }`}
+                </button>
+                <div className="flex-1">
+                  <p className={t.done ? 'text-muted line-through' : 'text-ink'}>
+                    {t.item}
+                  </p>
+                  <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                    <span className="rounded-full bg-light px-2 py-0.5 text-[11px] text-blue">
+                      {t.category}
+                    </span>
+                    <span className={`rounded-full px-2 py-0.5 text-[11px] ${PRIORITY_STYLE[t.priority]}`}>
+                      {t.priority}
+                    </span>
+                    {t.deadline && (
+                      <span className="rounded-full bg-cream px-2 py-0.5 text-[11px] text-danger">
+                        📅 {t.deadline}
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <button
+                  aria-label="삭제"
+                  onClick={() => removeTodo(t.id)}
+                  className="text-danger hover:opacity-70"
                 >
-                  {it.name}
-                </span>
-                <span className="rounded-full bg-light px-2.5 py-0.5 text-[11px] text-blue">
-                  {it.category}
-                </span>
-              </button>
-            </li>
-          );
-        })}
-        {items.length === 0 && (
-          <li className="rounded-2xl bg-white p-6 text-center text-sm text-muted">
-            이 주기에는 할 일이 없어요 🎉
-          </li>
-        )}
-      </ul>
+                  ✕
+                </button>
+              </li>
+            ))}
+            {todos.length === 0 && (
+              <li className="rounded-2xl bg-white p-6 text-center text-sm text-muted">
+                자연어로 적으면 카테고리·우선순위·기한을 자동으로 정리해드려요.
+              </li>
+            )}
+          </ul>
+        </>
+      )}
     </div>
   );
 }

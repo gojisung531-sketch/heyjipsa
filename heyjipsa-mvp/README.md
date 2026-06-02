@@ -36,8 +36,8 @@ npm run lint     # ESLint
 1. **랜딩** `/` — 그라데이션 히어로 + 인트로 3개 + 시작하기
 2. **온보딩** `/onboarding` — 3스텝(가구유형 → 생활옵션 → 템플릿 빼기), opt-out 방식
 3. **홈 대시보드** `/home` — 장보기/오늘의 집안일/이번 달 고정비 카드 + 하단 네비
-4. **이번 주 장보기** `/shopping` — 품목 관리(추가/삭제/수량/가격/브랜드선호) + **배송비 최적화**
-5. **집안일 체크리스트** `/checklist` — 오늘/이번 주/이번 달/계절 탭 + 진행률 + 완료 체크
+4. **이번 주 장보기** `/shopping` — 3개 탭: 품목 관리 + **배송비 최적화** / **구매 기록**(영수증 수동 입력) / **재구매 패턴**(주기 예측·재구매 알림)
+5. **집안일 체크리스트** `/checklist` — 오늘/이번 주/이번 달/계절 탭 + 진행률 + **내 할일**(자연어 캡처)
 
 ### ✅ P1 (완료)
 
@@ -52,7 +52,13 @@ npm run lint     # ESLint
    - **배송비 낚시 필터**: 상품·가격·배송비 입력 → 실질가격 재정렬 + 낚시 의심 표시
    - **월간 고정비 캘린더**: 월세·관리비·공과금·학원비 등록 + 납부일 D-day + 납부 체크
 
-> P0·P1·P2 전 기능 구현 완료. 하단 네비 6개 탭 모두 실제 동작합니다.
+### ✅ 추가 통합 (스펙 표의 나머지 스킬)
+
+9. **voice-to-todo** — `/checklist`의 **내 할일** 탭. 자연어 → 카테고리/우선순위/기한 자동 추출
+10. **purchase-pattern** — `/shopping`의 **재구매 패턴** 탭. 품목별 구매 주기 예측 + 월별 지출 차트
+11. **receipt-scanner**(수동 입력) — `/shopping`의 **구매 기록** 탭. 영수증 품목 입력 → 패턴 분석에 연동
+
+> P0·P1·P2 + 스펙의 11개 스킬 전부 구현·통합 완료. 하단 네비 6개 탭 모두 실제 동작합니다.
 
 ## 기존 Python 스킬 → TypeScript 포팅 맵
 
@@ -69,14 +75,15 @@ npm run lint     # ESLint
 | `budget-guard/config.json` | `src/data/budgetCategories.ts` | 생필품/준생필품/사치품 키워드 DB(117개) |
 | `budget-guard/classifier.py` | `src/utils/budgetGuard.ts` | 장바구니 분류 + 경고 |
 | `shipping-fee-filter/filter.py` | `src/utils/shippingFilter.ts` | 배송비 낚시 필터 + 실질가격 재정렬 |
+| `voice-to-todo/parser.py` | `src/utils/todoParser.ts` | 자연어 → 할일(카테고리/우선순위/기한) |
+| `purchase-pattern/scripts/analyze.py` | `src/utils/purchaseAnalyzer.ts` + `src/components/PurchasePattern.tsx` | 재구매 주기 예측 + Chart.js |
+| `receipt-scanner/scripts/receipt_to_xlsx.py` | `src/utils/receipts.ts` | 구매 기록 스키마·검증 (xlsx→localStorage) |
 
 > 포팅 결과는 동일 입력에 대해 원본 Python과 **출력이 정확히 일치**함을 교차 검증했습니다
 > (배송비 묶음·절약액, 체크리스트 항목 수, 가사 파싱·공정성 점수·추이·분배, 팁 검색 순위,
-> 장바구니 분류·예산 경고, 배송비 낚시 판별·정렬).
+> 장바구니 분류·예산 경고, 배송비 낚시 판별·정렬, 할일 파싱, 구매 패턴 주기·다음 예상일).
 
-스펙 표에 있으나 전용 페이지가 없어 아직 미통합인 스킬:
-`voice-to-todo/parser.py`, `purchase-pattern/scripts/analyze.py`,
-`receipt-scanner`(MVP에서는 수동 입력으로 대체).
+> 스펙 표의 11개 스킬 전부 포팅·통합 완료.
 
 ## 디렉터리 구조
 
@@ -100,11 +107,14 @@ src/
 │   ├── tipSearch.ts     # search_tips.py 포팅
 │   ├── budgetGuard.ts   # classifier.py 포팅
 │   ├── shippingFilter.ts# filter.py 포팅
+│   ├── todoParser.ts    # voice-to-todo/parser.py 포팅
+│   ├── purchaseAnalyzer.ts # purchase-pattern/analyze.py 포팅
+│   ├── receipts.ts      # receipt-scanner 스키마·검증 + 구매기록 저장
 │   ├── expenses.ts      # 고정비 D-day·라벨
 │   ├── shopping.ts
 │   ├── storage.ts       # localStorage 래퍼 (STORAGE_KEYS)
 │   └── format.ts
-├── components/          # Layout, BottomNav, ChoreDashboard(Chart.js), UI 프리미티브
+├── components/          # Layout, BottomNav, ChoreDashboard·PurchasePattern(Chart.js), UI 프리미티브
 └── pages/               # Landing, Onboarding, Home, Shopping, Checklist, Chores, Tips, Budget
 ```
 
