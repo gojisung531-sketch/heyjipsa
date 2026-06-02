@@ -97,3 +97,11 @@ export interface BudgetEntry {
   name: string;
   amount: number;
 }
+
+// ── 살림 팁 (P1) ────────────────────────────────────────
+export interface Tip {
+  category: string; // 청소 / 빨래 / 요리 / 수납정리 / 생활꿀팁 / 절약
+  title: string;
+  tip: string;
+  added: string; // YYYY-MM-DD
+}

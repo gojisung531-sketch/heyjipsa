@@ -14,7 +14,7 @@
 - Tailwind CSS v4 (`@tailwindcss/vite`)
 - react-router-dom (HashRouter — GitHub Pages/Vercel 정적 호스팅 호환)
 - 상태: `localStorage` (백엔드·DB 없음)
-- chart.js / react-chartjs-2 (P1 가사 대시보드용 — 설치만 됨)
+- chart.js / react-chartjs-2 (가사 대시보드 차트)
 
 ## 실행
 
@@ -39,9 +39,14 @@ npm run lint     # ESLint
 4. **이번 주 장보기** `/shopping` — 품목 관리(추가/삭제/수량/가격/브랜드선호) + **배송비 최적화**
 5. **집안일 체크리스트** `/checklist` — 오늘/이번 주/이번 달/계절 탭 + 진행률 + 완료 체크
 
+### ✅ P1 (완료)
+
+6. **가사노동 기록 & 대시보드** `/chores` — 자연어 기록 파싱 + 가족 구성원 설정 +
+   구성원/카테고리별 차트(Chart.js) + 공정성 점수 + 주간 추이 + 불균형 알림
+7. **살림 팁** `/tips` — 60개 팁 카테고리 탭 + 키워드 검색
+
 ### ⏳ 예정 (스텁 페이지 연결됨)
 
-- P1: 가사노동 기록·대시보드 `/chores`, 살림 팁 `/tips`
 - P2: 가계 관리(사치품 경고·배송비 낚시 필터·고정비 캘린더) `/budget`
 
 ## 기존 Python 스킬 → TypeScript 포팅 맵
@@ -52,14 +57,17 @@ npm run lint     # ESLint
 | `household-checklist/scripts/generate_checklist.py` | `src/utils/checklist.ts` | 카테고리 해석·항목 수집 로직 |
 | `smart-cart-optimizer/platforms.json` | `src/data/platforms.ts` | 플랫폼 DB + 품목 가격 범위 |
 | `smart-cart-optimizer/optimizer.py` | `src/utils/cartOptimizer.ts` | 무료배송 기준 묶음 최적화 알고리즘 |
+| `chore-logger/scripts/log_chore.py` | `src/utils/choreParser.ts` | 자연어 → 가사노동 기록 파싱 |
+| `chore-dashboard/scripts/dashboard.py` | `src/utils/choreAnalytics.ts` + `src/components/ChoreDashboard.tsx` | 분석 파이프라인 + Chart.js 시각화 |
+| `home-tips-qa/tips_db.md` | `src/data/tips.ts` | 살림 팁 60개 (원본 파서로 자동 생성) |
+| `home-tips-qa/scripts/search_tips.py` | `src/utils/tipSearch.ts` | 팁 검색 스코어링 |
 
 > 포팅 결과는 동일 입력에 대해 원본 Python과 **출력이 정확히 일치**함을 교차 검증했습니다
-> (배송비 묶음 구성·절약액, 체크리스트 카테고리/항목 수).
+> (배송비 묶음·절약액, 체크리스트 항목 수, 가사 파싱 결과, 공정성 점수·추이·분배, 팁 검색 순위).
 
-P1/P2에서 포팅 예정인 나머지 스킬: `budget-guard/classifier.py`,
-`chore-logger/scripts/log_chore.py`, `chore-dashboard/scripts/dashboard.py`,
-`voice-to-todo/parser.py`, `shipping-fee-filter/filter.py`,
-`purchase-pattern/scripts/analyze.py`, `home-tips-qa`(tips_db + search).
+P2에서 포팅 예정인 나머지 스킬: `budget-guard/classifier.py`(사치품 분류),
+`shipping-fee-filter/filter.py`(배송비 낚시 필터), `voice-to-todo/parser.py`,
+`purchase-pattern/scripts/analyze.py`, `receipt-scanner`(영수증 → 수동 입력 대체).
 
 ## 디렉터리 구조
 
@@ -71,16 +79,20 @@ src/
 ├── types.ts             # 공통 타입 (HouseholdConfig, ShoppingItem 등)
 ├── data/                # 포팅된 데이터
 │   ├── templates.ts
-│   └── platforms.ts
+│   ├── platforms.ts
+│   └── tips.ts          # 살림 팁 60개 (tips_db.md 자동 생성)
 ├── utils/               # 포팅된 로직 + 저장소
 │   ├── checklist.ts     # generate_checklist.py 포팅
 │   ├── checklistState.ts
 │   ├── cartOptimizer.ts # optimizer.py 포팅
+│   ├── choreParser.ts   # log_chore.py 포팅
+│   ├── choreAnalytics.ts# dashboard.py 분석부 포팅
+│   ├── tipSearch.ts     # search_tips.py 포팅
 │   ├── shopping.ts
 │   ├── storage.ts       # localStorage 래퍼 (STORAGE_KEYS)
 │   └── format.ts
-├── components/          # Layout, BottomNav, UI 프리미티브
-└── pages/               # Landing, Onboarding, Home, Shopping, Checklist, ComingSoon
+├── components/          # Layout, BottomNav, ChoreDashboard(Chart.js), UI 프리미티브
+└── pages/               # Landing, Onboarding, Home, Shopping, Checklist, Chores, Tips, ComingSoon
 ```
 
 ## 디자인 시스템

@@ -5,6 +5,8 @@ import Onboarding from './pages/Onboarding';
 import Home from './pages/Home';
 import Shopping from './pages/Shopping';
 import Checklist from './pages/Checklist';
+import Chores from './pages/Chores';
+import Tips from './pages/Tips';
 import ComingSoon from './pages/ComingSoon';
 
 export default function App() {
@@ -20,17 +22,7 @@ export default function App() {
           <Route path="/home" element={<Home />} />
           <Route path="/shopping" element={<Shopping />} />
           <Route path="/checklist" element={<Checklist />} />
-          <Route
-            path="/chores"
-            element={
-              <ComingSoon
-                title="가사노동 기록"
-                emoji="👥"
-                desc="자연어로 기록하면 구성원별 분배 차트와 공정성 점수를 보여드려요."
-                phase="P1"
-              />
-            }
-          />
+          <Route path="/chores" element={<Chores />} />
           <Route
             path="/budget"
             element={
@@ -42,17 +34,7 @@ export default function App() {
               />
             }
           />
-          <Route
-            path="/tips"
-            element={
-              <ComingSoon
-                title="살림 팁"
-                emoji="💡"
-                desc="청소·빨래·요리·수납·절약 꿀팁 50개를 검색해서 보여드려요."
-                phase="P1"
-              />
-            }
-          />
+          <Route path="/tips" element={<Tips />} />
         </Route>
 
         {/* 그 외 → 랜딩 */}
