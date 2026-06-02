@@ -1,0 +1,54 @@
+@import 'tailwindcss';
+
+/* ─────────────────────────────────────────────
+   헤이집사 디자인 시스템 (MVP_SPEC.md 기준)
+   ───────────────────────────────────────────── */
+@theme {
+  --color-navy: #1f3864; /* Primary */
+  --color-blue: #2e75b6; /* Secondary */
+  --color-mint: #5ba480; /* Success / Positive */
+  --color-cream: #fff4e6; /* Warm background */
+  --color-light: #d9e7f5; /* Light background */
+  --color-danger: #c0504d; /* Warning / Danger */
+  --color-ink: #1a1a1a; /* Text */
+  --color-muted: #595959; /* Secondary text */
+
+  --font-sans:
+    'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont,
+    'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', sans-serif;
+}
+
+@layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    margin: 0;
+    font-family: var(--font-sans);
+    background: var(--color-light);
+    color: var(--color-ink);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  button {
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
+/* 진행률 바 블루→민트 그라데이션 (디자인 시스템) */
+.progress-fill {
+  background: linear-gradient(90deg, var(--color-blue), var(--color-mint));
+}
+
+/* 가로 스크롤 탭 등 스크롤바 숨김 */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
