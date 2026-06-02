@@ -1,4 +1,4 @@
-// 가계 관리 `/budget` — 장바구니 분석 / 배송비 낚시 필터 / 월간 고정비 캘린더
+// 가계 관리 `/budget` — 장바구니 분석 / 월간 고정비 캘린더
 import { useState } from 'react';
 import type { ReactNode } from 'react';
 import type { ExpenseCategory, FixedExpense } from '../types';
@@ -6,7 +6,6 @@ import { PageHeader } from '../components/Layout';
 import { Button } from '../components/ui';
 import { analyzeCart } from '../utils/budgetGuard';
 import { SUMMARY_ORDER, BUDGET_CATEGORIES } from '../data/budgetCategories';
-import { parseTextInput, detectBait } from '../utils/shippingFilter';
 import {
   daysUntilDue,
   EXPENSE_CATEGORY_LABELS,
@@ -15,7 +14,7 @@ import {
 import { STORAGE_KEYS, loadJSON, saveJSON, uid } from '../utils/storage';
 import { won } from '../utils/format';
 
-type Tab = 'cart' | 'shipping' | 'fixed';
+type Tab = 'cart' | 'fixed';
 const EXPENSE_CATS: ExpenseCategory[] = [
   'rent',
   'utilities',
@@ -35,7 +34,6 @@ export default function Budget() {
         {(
           [
             ['cart', '장바구니 분석'],
-            ['shipping', '배송비 필터'],
             ['fixed', '고정비'],
           ] as Array<[Tab, string]>
         ).map(([k, label]) => (
@@ -52,7 +50,6 @@ export default function Budget() {
       </div>
 
       {tab === 'cart' && <CartAnalysis />}
-      {tab === 'shipping' && <ShippingFilter />}
       {tab === 'fixed' && <FixedExpenses />}
     </div>
   );
@@ -203,55 +200,7 @@ function Warn({
   );
 }
 
-// ── 2. 배송비 낚시 필터 ─────────────────────────────────
-function ShippingFilter() {
-  const [text, setText] = useState('');
-  const results = detectBait(parseTextInput(text));
-
-  return (
-    <div>
-      <textarea
-        value={text}
-        onChange={(e) => setText(e.target.value)}
-        rows={5}
-        placeholder={'상품명, 가격, 배송비 (한 줄에 하나씩):\nA상품, 990, 3500\nB상품, 3200, 0\nC상품, 2500, 2500'}
-        className="w-full resize-none rounded-2xl border border-light bg-white px-4 py-3 text-sm outline-none focus:border-blue"
-      />
-
-      {results.length > 0 && (
-        <div className="mt-4 space-y-2">
-          {results.map((r, i) => (
-            <div key={i} className="rounded-2xl bg-white p-4">
-              <div className="flex items-center justify-between">
-                <span className="font-bold text-ink">
-                  <span className="mr-2 text-muted">{i + 1}.</span>
-                  {r.name}
-                </span>
-                <span className="font-bold text-navy">{won(r.real_price)}</span>
-              </div>
-              <div className="mt-1 flex gap-3 text-xs text-muted">
-                <span>상품가 {won(r.price)}</span>
-                <span>
-                  배송비 {r.shipping === 0 ? '무료' : won(r.shipping)}
-                </span>
-              </div>
-              {r.is_bait && (
-                <p className="mt-2 rounded-lg bg-danger/10 px-2.5 py-1 text-xs font-medium text-danger">
-                  🚨 {r.bait_reasons.join(', ')}
-                </p>
-              )}
-            </div>
-          ))}
-          <div className="rounded-2xl bg-mint/10 p-4 text-sm font-semibold text-mint">
-            ✅ 실질가격 최저가: {results[0].name} ({won(results[0].real_price)})
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ── 3. 월간 고정비 캘린더 ───────────────────────────────
+// ── 2. 월간 고정비 캘린더 ───────────────────────────────
 function FixedExpenses() {
   const [list, setList] = useState<FixedExpense[]>(() =>
     loadJSON<FixedExpense[]>(STORAGE_KEYS.FIXED_EXPENSES, []),

@@ -47,9 +47,8 @@ npm run lint     # ESLint
 
 ### ✅ P2 (완료)
 
-8. **가계 관리** `/budget` — 3개 탭:
+8. **가계 관리** `/budget` — 2개 탭:
    - **장바구니 분석**: 텍스트 붙여넣기 → 생필품/준생필품/사치품 분류 + 사치품·반복구매·예산 경고
-   - **배송비 낚시 필터**: 상품·가격·배송비 입력 → 실질가격 재정렬 + 낚시 의심 표시
    - **월간 고정비 캘린더**: 월세·관리비·공과금·학원비 등록 + 납부일 D-day + 납부 체크
 
 ### ✅ 추가 통합 (스펙 표의 나머지 스킬)
@@ -74,7 +73,7 @@ npm run lint     # ESLint
 | `home-tips-qa/scripts/search_tips.py` | `src/utils/tipSearch.ts` | 팁 검색 스코어링 |
 | `budget-guard/config.json` | `src/data/budgetCategories.ts` | 생필품/준생필품/사치품 키워드 DB(117개) |
 | `budget-guard/classifier.py` | `src/utils/budgetGuard.ts` | 장바구니 분류 + 경고 |
-| `shipping-fee-filter/filter.py` | `src/utils/shippingFilter.ts` | 배송비 낚시 필터 + 실질가격 재정렬 |
+| `shipping-fee-filter/filter.py` | `src/utils/shippingFilter.ts` | 배송비 낚시 필터 + 실질가격 재정렬 (현재 UI 비노출) |
 | `voice-to-todo/parser.py` | `src/utils/todoParser.ts` | 자연어 → 할일(카테고리/우선순위/기한) |
 | `purchase-pattern/scripts/analyze.py` | `src/utils/purchaseAnalyzer.ts` + `src/components/PurchasePattern.tsx` | 재구매 주기 예측 + Chart.js |
 | `receipt-scanner/scripts/receipt_to_xlsx.py` | `src/utils/receipts.ts` | 구매 기록 스키마·검증 (xlsx→localStorage) |
