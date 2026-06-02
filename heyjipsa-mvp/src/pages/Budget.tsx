@@ -4,6 +4,7 @@ import type { ReactNode } from 'react';
 import type { ExpenseCategory, FixedExpense } from '../types';
 import { PageHeader } from '../components/Layout';
 import { Button } from '../components/ui';
+import OcrButton from '../components/OcrButton';
 import { analyzeCart } from '../utils/budgetGuard';
 import { SUMMARY_ORDER, BUDGET_CATEGORIES } from '../data/budgetCategories';
 import {
@@ -67,11 +68,16 @@ function CartAnalysis() {
 
   return (
     <div>
+      <OcrButton
+        className="mb-2"
+        label="📷 영수증·주문내역 사진으로 불러오기"
+        onText={(t) => setText((prev) => (prev ? prev + '\n' + t : t))}
+      />
       <textarea
         value={text}
         onChange={(e) => setText(e.target.value)}
         rows={5}
-        placeholder={'장바구니를 한 줄에 하나씩 붙여넣으세요:\n휴지 24롤 - 18,000원\n샤넬 립스틱 - 52,000원\n라면 5개 - 4,500원'}
+        placeholder={'장바구니를 한 줄에 하나씩 붙여넣거나 위 버튼으로 사진 인식:\n휴지 24롤 - 18,000원\n샤넬 립스틱 - 52,000원\n라면 5개 - 4,500원'}
         className="w-full resize-none rounded-2xl border border-light bg-white px-4 py-3 text-sm outline-none focus:border-blue"
       />
       <label className="mt-2 flex items-center gap-2 text-sm text-muted">

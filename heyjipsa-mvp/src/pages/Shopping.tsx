@@ -4,17 +4,18 @@ import type { PurchaseRecord, ShoppingItem } from '../types';
 import { PageHeader } from '../components/Layout';
 import { Button } from '../components/ui';
 import PurchasePattern from '../components/PurchasePattern';
+import OcrButton from '../components/OcrButton';
 import {
   getShoppingList,
   saveShoppingList,
   estimatedPriceOf,
 } from '../utils/shopping';
 import { optimize, fromShoppingItems } from '../utils/cartOptimizer';
+import { parseCart } from '../utils/budgetGuard';
 import {
   loadPurchases,
   savePurchases,
   buildSamplePurchases,
-  toAmount,
 } from '../utils/receipts';
 import { uid, todayStr } from '../utils/storage';
 import { won } from '../utils/format';
@@ -210,6 +211,28 @@ function ShoppingListTab() {
         </Button>
       </div>
 
+      <OcrButton
+        className="mt-2"
+        label="📷 주문내역·영수증 사진으로 품목 추가"
+        onText={(t) => {
+          const parsed = parseCart(t);
+          if (parsed.length === 0) return;
+          update([
+            ...items,
+            ...parsed.map(
+              (p): ShoppingItem => ({
+                id: uid('shop'),
+                name: p.name,
+                category: '기타',
+                estimatedPrice: p.price || estimatedPriceOf(p.name),
+                quantity: 1,
+                preferBrand: false,
+              }),
+            ),
+          ]);
+        }}
+      />
+
       <section className="mt-7">
         <h2 className="mb-1 text-lg font-bold text-navy">📦 배송비 최적화</h2>
         <p className="mb-3 text-sm text-muted">
@@ -301,35 +324,26 @@ function PurchaseRecordsTab({
   onSave: (r: PurchaseRecord[]) => void;
 }) {
   const [date, setDate] = useState(todayStr());
-  const [item, setItem] = useState('');
   const [store, setStore] = useState('');
-  const [qty, setQty] = useState('1');
-  const [unitPrice, setUnitPrice] = useState('');
-  const [category, setCategory] = useState('');
+  const [staging, setStaging] = useState('');
 
-  const add = () => {
-    const name = item.trim();
-    const price = toAmount(unitPrice);
-    const q = Math.max(1, toAmount(qty) || 1);
-    if (!name || price <= 0) return;
-    onSave([
-      ...records,
-      {
-        id: uid('buy'),
-        date: date || todayStr(),
-        store: store.trim(),
-        item: name,
-        qty: q,
-        unitPrice: price,
-        total: price * q,
-        category: category.trim(),
-      },
-    ]);
-    setItem('');
-    setUnitPrice('');
-    setStore('');
-    setQty('1');
-    setCategory('');
+  const previewCount = parseCart(staging).length;
+
+  const addFromStaging = () => {
+    const parsed = parseCart(staging);
+    if (parsed.length === 0) return;
+    const newRecords: PurchaseRecord[] = parsed.map((p) => ({
+      id: uid('buy'),
+      date: date || todayStr(),
+      store: store.trim(),
+      item: p.name,
+      qty: 1,
+      unitPrice: p.price,
+      total: p.price,
+      category: '',
+    }));
+    onSave([...records, ...newRecords]);
+    setStaging('');
   };
 
   const remove = (id: string) => onSave(records.filter((r) => r.id !== id));
@@ -339,9 +353,9 @@ function PurchaseRecordsTab({
 
   return (
     <div>
-      {/* 입력 폼 */}
+      {/* 입력 폼: 사진 인식 → 수정 → 추가 */}
       <div className="rounded-2xl bg-white p-4">
-        <p className="mb-2 text-sm font-bold text-navy">+ 구매 품목 추가</p>
+        <p className="mb-2 text-sm font-bold text-navy">+ 구매 기록 추가</p>
         <div className="space-y-2">
           <div className="flex gap-2">
             <input
@@ -357,38 +371,19 @@ function PurchaseRecordsTab({
               className="w-28 rounded-lg border border-light px-3 py-2 text-sm outline-none focus:border-blue"
             />
           </div>
-          <input
-            value={item}
-            onChange={(e) => setItem(e.target.value)}
-            placeholder="품목명 (예: 휴지 30롤)"
-            className="w-full rounded-lg border border-light px-3 py-2 text-sm outline-none focus:border-blue"
+          <OcrButton
+            label="📷 영수증·주문내역 사진 인식"
+            onText={(t) => setStaging((prev) => (prev ? prev + '\n' + t : t))}
           />
-          <div className="flex gap-2">
-            <input
-              value={unitPrice}
-              onChange={(e) => setUnitPrice(e.target.value)}
-              inputMode="numeric"
-              placeholder="단가"
-              className="flex-1 rounded-lg border border-light px-3 py-2 text-sm outline-none focus:border-blue"
-            />
-            <div className="flex items-center gap-1 rounded-lg border border-light px-2">
-              <span className="text-xs text-muted">수량</span>
-              <input
-                value={qty}
-                onChange={(e) => setQty(e.target.value)}
-                inputMode="numeric"
-                className="w-12 py-2 text-center text-sm outline-none"
-              />
-            </div>
-            <input
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              placeholder="분류(선택)"
-              className="w-24 rounded-lg border border-light px-3 py-2 text-sm outline-none focus:border-blue"
-            />
-          </div>
-          <Button className="w-full" disabled={!item.trim() || !unitPrice.trim()} onClick={add}>
-            기록 추가
+          <textarea
+            value={staging}
+            onChange={(e) => setStaging(e.target.value)}
+            rows={4}
+            placeholder={'사진을 인식하거나 직접 입력 (한 줄에 "품목 가격"):\n휴지 30롤 12,900원\n우유 1L 3,200원'}
+            className="w-full resize-none rounded-lg border border-light px-3 py-2 text-sm outline-none focus:border-blue"
+          />
+          <Button className="w-full" disabled={previewCount === 0} onClick={addFromStaging}>
+            {previewCount > 0 ? `${previewCount}개 기록 추가` : '기록 추가'}
           </Button>
         </div>
       </div>
