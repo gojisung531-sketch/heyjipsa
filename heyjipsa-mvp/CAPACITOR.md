@@ -73,22 +73,36 @@ Xcode에서:
   **플랫폼 추가 전에** 정하는 게 가장 깔끔합니다(이미 추가했다면 폴더 지우고 재생성).
 - `appName`: 폰 홈에 표시될 이름(기본 `헤이집사`).
 
-## 5. 아이콘 & 스플래시
+## 5. 아이콘 & 스플래시 (이미 소스 포함)
+브랜드 아이콘/스플래시 소스가 `assets/` 에 들어 있습니다
+(`icon-only.png` 1024, `icon-foreground.png`, `icon-background.png`, `splash.png`/`splash-dark.png` 2732).
+플랫폼 추가 후 한 번 실행하면 iOS/안드로이드 아이콘·스플래시가 자동 생성됩니다:
 ```bash
-npm i -D @capacitor/assets
-# 1024x1024 아이콘을 resources/icon.png, 2732x2732 스플래시를 resources/splash.png 로 두고
 npx capacitor-assets generate
 ```
+디자인을 바꾸려면 `assets/`의 PNG를 같은 크기로 교체하고 다시 generate 하세요.
 
-## 6. (선택) OCR 정확도 업그레이드
-지금은 웹뷰에서 tesseract.js로 동작합니다(인터넷 필요, 종이 영수증 정확도는 보통).
-네이티브에서 **기기 내장 ML Kit 텍스트 인식**으로 바꾸면 한국어 정확도가 크게 좋아지고
-오프라인도 됩니다. 커뮤니티 플러그인(`@capacitor-mlkit/text-recognition` 등)으로 교체 가능 —
-필요하면 `src/utils/ocr.ts`만 네이티브 분기로 바꾸면 UI는 그대로입니다.
+## 6. OCR — 플랫폼별 자동 분기 (이미 적용됨)
+`src/utils/ocr.ts`가 플랫폼을 감지해 자동으로 갈립니다:
+- **웹**: Tesseract.js (모델 런타임 다운로드, 인터넷 필요)
+- **네이티브**: 카메라 촬영 → **기기 내장 ML Kit 텍스트 인식**
+  (`@pantrist/capacitor-plugin-ml-kit-text-recognition` + `@capacitor/camera`) — 한국어 정확도 우수·오프라인.
 
-## 7. 카메라 UX(선택)
-현재는 `<input type="file" capture>`로 촬영/갤러리를 엽니다(웹뷰에서 동작).
-더 매끄러운 네이티브 카메라가 필요하면 `@capacitor/camera` 플러그인으로 교체할 수 있습니다.
+`npx cap sync` 하면 두 플러그인의 네이티브 의존성(안드로이드 ML Kit, iOS Pod)이 자동 설치됩니다.
+
+### 카메라 권한 (필수)
+- **iOS** — `ios/App/App/Info.plist` 에 추가:
+  ```xml
+  <key>NSCameraUsageDescription</key>
+  <string>영수증·주문내역을 촬영해 품목을 인식합니다.</string>
+  <key>NSPhotoLibraryUsageDescription</key>
+  <string>저장된 영수증 이미지를 불러와 품목을 인식합니다.</string>
+  ```
+- **Android** — `@capacitor/camera`가 필요한 권한을 추가하지만, 카메라 촬영을 쓰면
+  `android/app/src/main/AndroidManifest.xml` 에 다음이 있는지 확인:
+  ```xml
+  <uses-permission android:name="android.permission.CAMERA" />
+  ```
 
 ---
 

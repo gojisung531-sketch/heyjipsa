@@ -1,8 +1,12 @@
-// 클라이언트 OCR (Tesseract.js) — 이미지에서 한국어/숫자 텍스트 추출
-// 모델·워커는 런타임에 CDN에서 받아온다(인터넷 필요). 백엔드 없음.
-// tesseract.js는 동적 import → 실제 인식할 때만 로드(초기 번들에서 분리).
+// 클라이언트 OCR — 플랫폼별 분기
+//  - 웹: Tesseract.js (모델은 런타임 CDN, 동적 로드)
+//  - 네이티브(Capacitor): 카메라 촬영 → 기기 내장 ML Kit 텍스트 인식 (오프라인·고정확도)
+// 네이티브 플러그인/카메라는 동적 import → 웹 번들·렌더에 영향 없음.
+import { Capacitor } from '@capacitor/core';
 
-/** 이미지(File/Blob) → 인식된 텍스트. onProgress: 0~1 */
+export const isNativeOCR = (): boolean => Capacitor.isNativePlatform();
+
+/** 웹: 이미지(File/Blob) → 인식 텍스트. onProgress: 0~1 */
 export async function recognizeImage(
   file: File | Blob,
   onProgress?: (p: number) => void,
@@ -19,4 +23,22 @@ export async function recognizeImage(
   } finally {
     await worker.terminate();
   }
+}
+
+/** 네이티브: 카메라/갤러리 → ML Kit 텍스트 인식 → 텍스트 */
+export async function captureAndRecognizeNative(): Promise<string> {
+  const { Camera, CameraResultType, CameraSource } = await import('@capacitor/camera');
+  const { CapacitorPluginMlKitTextRecognition } = await import(
+    '@pantrist/capacitor-plugin-ml-kit-text-recognition'
+  );
+  const photo = await Camera.getPhoto({
+    quality: 90,
+    resultType: CameraResultType.Base64,
+    source: CameraSource.Prompt,
+  });
+  if (!photo.base64String) return '';
+  const { text } = await CapacitorPluginMlKitTextRecognition.detectText({
+    base64Image: photo.base64String,
+  });
+  return (text ?? '').trim();
 }

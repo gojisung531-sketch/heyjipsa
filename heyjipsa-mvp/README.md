@@ -15,7 +15,7 @@
 - react-router-dom (HashRouter — GitHub Pages/Vercel 정적 호스팅 호환)
 - 상태: `localStorage` (백엔드·DB 없음)
 - chart.js / react-chartjs-2 (가사 대시보드 차트)
-- tesseract.js (영수증·스크린샷 OCR, 사용할 때만 동적 로드)
+- OCR: 웹은 tesseract.js, 네이티브(Capacitor)는 기기 내장 ML Kit — 사용할 때만 동적 로드
 
 ## 실행
 

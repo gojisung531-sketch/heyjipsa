@@ -14,8 +14,10 @@
   },
   "dependencies": {
     "@capacitor/android": "^8.4.0",
+    "@capacitor/camera": "^8.2.0",
     "@capacitor/core": "^8.4.0",
     "@capacitor/ios": "^8.4.0",
+    "@pantrist/capacitor-plugin-ml-kit-text-recognition": "^8.0.0",
     "chart.js": "^4.5.1",
     "react": "^19.2.6",
     "react-chartjs-2": "^5.3.1",
@@ -24,6 +26,7 @@
     "tesseract.js": "^7.0.0"
   },
   "devDependencies": {
+    "@capacitor/assets": "^3.0.5",
     "@capacitor/cli": "^8.4.0",
     "@eslint/js": "^10.0.1",
     "@tailwindcss/vite": "^4.3.0",
