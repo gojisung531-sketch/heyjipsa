@@ -7,7 +7,7 @@ import Shopping from './pages/Shopping';
 import Checklist from './pages/Checklist';
 import Chores from './pages/Chores';
 import Tips from './pages/Tips';
-import ComingSoon from './pages/ComingSoon';
+import Budget from './pages/Budget';
 
 export default function App() {
   return (
@@ -23,17 +23,7 @@ export default function App() {
           <Route path="/shopping" element={<Shopping />} />
           <Route path="/checklist" element={<Checklist />} />
           <Route path="/chores" element={<Chores />} />
-          <Route
-            path="/budget"
-            element={
-              <ComingSoon
-                title="가계 관리"
-                emoji="💰"
-                desc="사치품 경고, 배송비 낚시 필터, 월간 고정비 캘린더를 준비 중이에요."
-                phase="P2"
-              />
-            }
-          />
+          <Route path="/budget" element={<Budget />} />
           <Route path="/tips" element={<Tips />} />
         </Route>
 

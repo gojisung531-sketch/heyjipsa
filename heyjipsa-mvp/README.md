@@ -45,9 +45,14 @@ npm run lint     # ESLint
    구성원/카테고리별 차트(Chart.js) + 공정성 점수 + 주간 추이 + 불균형 알림
 7. **살림 팁** `/tips` — 60개 팁 카테고리 탭 + 키워드 검색
 
-### ⏳ 예정 (스텁 페이지 연결됨)
+### ✅ P2 (완료)
 
-- P2: 가계 관리(사치품 경고·배송비 낚시 필터·고정비 캘린더) `/budget`
+8. **가계 관리** `/budget` — 3개 탭:
+   - **장바구니 분석**: 텍스트 붙여넣기 → 생필품/준생필품/사치품 분류 + 사치품·반복구매·예산 경고
+   - **배송비 낚시 필터**: 상품·가격·배송비 입력 → 실질가격 재정렬 + 낚시 의심 표시
+   - **월간 고정비 캘린더**: 월세·관리비·공과금·학원비 등록 + 납부일 D-day + 납부 체크
+
+> P0·P1·P2 전 기능 구현 완료. 하단 네비 6개 탭 모두 실제 동작합니다.
 
 ## 기존 Python 스킬 → TypeScript 포팅 맵
 
@@ -61,13 +66,17 @@ npm run lint     # ESLint
 | `chore-dashboard/scripts/dashboard.py` | `src/utils/choreAnalytics.ts` + `src/components/ChoreDashboard.tsx` | 분석 파이프라인 + Chart.js 시각화 |
 | `home-tips-qa/tips_db.md` | `src/data/tips.ts` | 살림 팁 60개 (원본 파서로 자동 생성) |
 | `home-tips-qa/scripts/search_tips.py` | `src/utils/tipSearch.ts` | 팁 검색 스코어링 |
+| `budget-guard/config.json` | `src/data/budgetCategories.ts` | 생필품/준생필품/사치품 키워드 DB(117개) |
+| `budget-guard/classifier.py` | `src/utils/budgetGuard.ts` | 장바구니 분류 + 경고 |
+| `shipping-fee-filter/filter.py` | `src/utils/shippingFilter.ts` | 배송비 낚시 필터 + 실질가격 재정렬 |
 
 > 포팅 결과는 동일 입력에 대해 원본 Python과 **출력이 정확히 일치**함을 교차 검증했습니다
-> (배송비 묶음·절약액, 체크리스트 항목 수, 가사 파싱 결과, 공정성 점수·추이·분배, 팁 검색 순위).
+> (배송비 묶음·절약액, 체크리스트 항목 수, 가사 파싱·공정성 점수·추이·분배, 팁 검색 순위,
+> 장바구니 분류·예산 경고, 배송비 낚시 판별·정렬).
 
-P2에서 포팅 예정인 나머지 스킬: `budget-guard/classifier.py`(사치품 분류),
-`shipping-fee-filter/filter.py`(배송비 낚시 필터), `voice-to-todo/parser.py`,
-`purchase-pattern/scripts/analyze.py`, `receipt-scanner`(영수증 → 수동 입력 대체).
+스펙 표에 있으나 전용 페이지가 없어 아직 미통합인 스킬:
+`voice-to-todo/parser.py`, `purchase-pattern/scripts/analyze.py`,
+`receipt-scanner`(MVP에서는 수동 입력으로 대체).
 
 ## 디렉터리 구조
 
@@ -80,7 +89,8 @@ src/
 ├── data/                # 포팅된 데이터
 │   ├── templates.ts
 │   ├── platforms.ts
-│   └── tips.ts          # 살림 팁 60개 (tips_db.md 자동 생성)
+│   ├── tips.ts          # 살림 팁 60개 (tips_db.md 자동 생성)
+│   └── budgetCategories.ts # 분류 키워드 DB (config.json 자동 생성)
 ├── utils/               # 포팅된 로직 + 저장소
 │   ├── checklist.ts     # generate_checklist.py 포팅
 │   ├── checklistState.ts
@@ -88,11 +98,14 @@ src/
 │   ├── choreParser.ts   # log_chore.py 포팅
 │   ├── choreAnalytics.ts# dashboard.py 분석부 포팅
 │   ├── tipSearch.ts     # search_tips.py 포팅
+│   ├── budgetGuard.ts   # classifier.py 포팅
+│   ├── shippingFilter.ts# filter.py 포팅
+│   ├── expenses.ts      # 고정비 D-day·라벨
 │   ├── shopping.ts
 │   ├── storage.ts       # localStorage 래퍼 (STORAGE_KEYS)
 │   └── format.ts
 ├── components/          # Layout, BottomNav, ChoreDashboard(Chart.js), UI 프리미티브
-└── pages/               # Landing, Onboarding, Home, Shopping, Checklist, Chores, Tips, ComingSoon
+└── pages/               # Landing, Onboarding, Home, Shopping, Checklist, Chores, Tips, Budget
 ```
 
 ## 디자인 시스템

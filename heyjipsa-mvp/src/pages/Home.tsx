@@ -7,6 +7,7 @@ import { getShoppingList } from '../utils/shopping';
 import { optimize, fromShoppingItems } from '../utils/cartOptimizer';
 import { buildChecklist } from '../utils/checklist';
 import { loadChecklistState } from '../utils/checklistState';
+import { daysUntilDue } from '../utils/expenses';
 import { won } from '../utils/format';
 
 const TYPE_LABEL: Record<HouseholdType, string> = {
@@ -16,19 +17,6 @@ const TYPE_LABEL: Record<HouseholdType, string> = {
   couple_2kids: '부부 + 아이 2명 이상',
   with_parents: '부모님 동거',
 };
-
-/** 매월 dueDay 기준 다음 납부일까지 D-day */
-function daysUntilDue(dueDay: number): number {
-  const now = new Date();
-  const y = now.getFullYear();
-  const m = now.getMonth();
-  let due = new Date(y, m, dueDay);
-  if (due.getTime() < new Date(y, m, now.getDate()).getTime()) {
-    due = new Date(y, m + 1, dueDay);
-  }
-  const ms = due.getTime() - new Date(y, m, now.getDate()).getTime();
-  return Math.round(ms / 86_400_000);
-}
 
 export default function Home() {
   const navigate = useNavigate();
