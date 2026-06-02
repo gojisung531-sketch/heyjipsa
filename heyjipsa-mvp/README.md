@@ -30,6 +30,11 @@ npm run lint     # ESLint
 > GitHub Pages 프로젝트 사이트로 배포 시 `vite.config.ts`의 `base`를
 > `'/<repo-name>/'`로 설정하세요. HashRouter라 새로고침 404는 없습니다.
 
+### 📱 네이티브 앱(앱스토어/플레이스토어)
+Capacitor로 iOS/안드로이드 앱을 만들 수 있게 설정돼 있습니다. 빌드·출시 절차는
+**[CAPACITOR.md](./CAPACITOR.md)** 참고. 요약: `npx cap add android`(또는 `ios`) →
+`npm run cap:android`(또는 `cap:ios`)로 Android Studio/Xcode에서 실행·출시.
+
 ## 구현 범위
 
 ### ✅ P0 (완료)

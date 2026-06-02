@@ -12,6 +12,10 @@ dist
 dist-ssr
 *.local
 
+# Capacitor 네이티브 프로젝트 (각 머신에서 npx cap add 로 생성)
+/android
+/ios
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
