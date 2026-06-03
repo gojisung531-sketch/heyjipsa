@@ -20,8 +20,8 @@ OCR(tesseract.js)도 웹뷰에서 동작하며, 모델은 인터넷에서 받아
 ```bash
 cd heyjipsa-mvp
 npm run build            # 웹 빌드(dist) 생성
-npx cap add android      # android/ 생성  (Windows/맥/리눅스 모두 가능)
-npx cap add ios          # ios/ 생성      (맥에서만)
+# android/ 는 레포에 이미 포함됨(아이콘·권한·플러그인 적용 완료) → 바로 빌드 가능
+npx cap add ios          # ios/ 생성      (맥에서만, 최초 1회)
 ```
 
 이후 웹 코드를 바꿀 때마다 동기화:
@@ -31,14 +31,16 @@ npm run cap:sync         # = build + cap sync (android/ios 둘 다 반영)
 
 ---
 
-## 2. 안드로이드 (Windows에서도 가능)
+## 2. 안드로이드 (Windows에서도 가능) — android/ 포함됨
 
-준비물: **Android Studio** 설치 (Android SDK 포함).
+준비물: **Android Studio** 설치 (Android SDK 포함). `android/` 폴더가 이미 들어있어
+아이콘·권한(카메라/마이크)·플러그인까지 적용된 상태입니다.
 
-```bash
-npm run cap:android      # 빌드 + 동기화 + Android Studio 열기
-# (또는 수동: npx cap open android)
-```
+가장 쉬운 방법: **Android Studio에서 `heyjipsa-mvp/android` 폴더 열기** → Gradle 동기화 끝나면 ▶ Run.
+(또는 터미널에서 `npm run cap:android` = 빌드+동기화+Android Studio 열기)
+
+> 첫 Gradle 동기화 때 AGP·androidx·ML Kit 의존성을 받습니다(인터넷 필요).
+> 웹 코드를 바꾼 뒤에는 `npm run cap:sync` 로 android/에 반영하세요.
 
 Android Studio에서:
 1. 상단 기기 선택(에뮬레이터 또는 USB 연결한 폰) → ▶ Run 으로 실제 구동 확인.

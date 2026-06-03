@@ -12,8 +12,8 @@ dist
 dist-ssr
 *.local
 
-# Capacitor 네이티브 프로젝트 (각 머신에서 npx cap add 로 생성)
-/android
+# Capacitor: android는 레포에 포함(바로 빌드). 빌드 산출물은 android/.gitignore가 제외.
+# iOS는 Mac에서 `npx cap add ios`로 생성.
 /ios
 
 # Editor directories and files
