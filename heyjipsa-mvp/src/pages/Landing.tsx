@@ -9,7 +9,7 @@ export default function Landing() {
   const start = () => navigate(onboarded ? '/home' : '/onboarding');
 
   return (
-    <div className="min-h-dvh w-full bg-gradient-to-b from-white to-light">
+    <div className="min-h-dvh w-full bg-[#F6EEDA]">
       <div className="mx-auto flex min-h-dvh max-w-[430px] flex-col px-8 py-12">
         {/* 아이콘 중앙 */}
         <div className="flex flex-1 items-center justify-center">

@@ -25,14 +25,20 @@ const fg = await sharp(cropped).resize(720, 720).png().toBuffer();
 await sharp({ create: { width: 1024, height: 1024, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } } })
   .composite([{ input: fg, gravity: 'center' }]).png().toFile('assets/icon-foreground.png');
 
-// 라운드 마스크 → 모서리 투명한 크림 카드
+// 라운드 마스크 → 모서리 투명한 크림 카드 (스플래시용)
 const mask = Buffer.from(
   '<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024"><rect width="1024" height="1024" rx="196" ry="196" fill="#fff"/></svg>',
 );
 const card = await sharp(cropped).composite([{ input: mask, blend: 'dest-in' }]).png().toBuffer();
 
-// 랜딩용 로고(투명 모서리 카드) → public/logo.png 덮어쓰기
-writeFileSync('public/logo.png', card);
+// 랜딩용 로고: 크림+옅은 그림자까지 투명 처리(휘도 기반 알파) → 네이비 집사만
+// alpha = 307.8 - 1.466*휘도  (네이비≈36→255, 휘도 210 이상(크림·그림자)→0)
+const alpha = await sharp(cropped).toColourspace('b-w').linear(-1.466, 307.8).raw().toBuffer();
+const keyed = await sharp({ create: { width: 1024, height: 1024, channels: 3, background: { r: 12, g: 40, b: 80 } } })
+  .joinChannel(alpha, { raw: { width: 1024, height: 1024, channels: 1 } })
+  .png()
+  .toBuffer();
+writeFileSync('public/logo.png', keyed);
 
 // 스플래시 (카드 가운데 배치)
 const sp = await sharp(card).resize(1040, 1040).png().toBuffer();
