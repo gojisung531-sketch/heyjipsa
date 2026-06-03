@@ -3,6 +3,7 @@ import { useState } from 'react';
 import type { ChoreEntry, FamilyMember } from '../types';
 import { PageHeader } from '../components/Layout';
 import { Button } from '../components/ui';
+import VoiceButton from '../components/VoiceButton';
 import ChoreDashboard from '../components/ChoreDashboard';
 import { STORAGE_KEYS, loadJSON, saveJSON, todayStr, uid } from '../utils/storage';
 import {
@@ -176,7 +177,11 @@ export default function Chores() {
 
       {tab === 'log' ? (
         <div>
-          {/* 입력 */}
+          {/* 입력 (음성/텍스트) */}
+          <VoiceButton
+            className="mb-2"
+            onText={(t) => setText((prev) => (prev ? prev + ' ' + t : t))}
+          />
           <textarea
             value={text}
             onChange={(e) => setText(e.target.value)}

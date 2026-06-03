@@ -104,6 +104,25 @@ npx capacitor-assets generate
   <uses-permission android:name="android.permission.CAMERA" />
   ```
 
+## 7. 음성 입력 (시리처럼) — 이미 적용됨
+- **웹**: 브라우저 SpeechRecognition. ⚠️ 마이크는 **HTTPS/localhost에서만** 허용 →
+  폰을 LAN(`http://192.168…`)으로 붙이면 음성은 동작하지 않음(데스크톱 localhost·네이티브 앱에서는 OK).
+- **네이티브**: `@capacitor-community/speech-recognition` (on-device, ko-KR).
+- UI: 전역 🎤 FAB(말하면 할 일로 자동 정리·추가) + 내 할일/가사분담 기록 입력의 음성 버튼.
+
+### 음성·마이크 권한 (필수)
+- **iOS** — `Info.plist` 에 추가:
+  ```xml
+  <key>NSMicrophoneUsageDescription</key>
+  <string>음성으로 할 일·기록을 입력합니다.</string>
+  <key>NSSpeechRecognitionUsageDescription</key>
+  <string>음성을 텍스트로 변환해 할 일·기록을 추가합니다.</string>
+  ```
+- **Android** — `AndroidManifest.xml`:
+  ```xml
+  <uses-permission android:name="android.permission.RECORD_AUDIO" />
+  ```
+
 ---
 
 ### 업데이트 루틴 요약

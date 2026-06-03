@@ -10,6 +10,7 @@ import type {
 } from '../types';
 import { PageHeader } from '../components/Layout';
 import { ProgressBar } from '../components/ui';
+import VoiceButton from '../components/VoiceButton';
 import { STORAGE_KEYS, loadJSON, saveJSON, uid } from '../utils/storage';
 import { buildChecklist } from '../utils/checklist';
 import { loadChecklistState, saveChecklistState } from '../utils/checklistState';
@@ -173,7 +174,11 @@ export default function Checklist() {
         </>
       ) : (
         <>
-          {/* 자연어 빠른 추가 */}
+          {/* 자연어 빠른 추가 (음성/텍스트) */}
+          <VoiceButton
+            className="mb-2"
+            onText={(t) => setTodoText((prev) => (prev ? prev + ' ' + t : t))}
+          />
           <textarea
             value={todoText}
             onChange={(e) => setTodoText(e.target.value)}

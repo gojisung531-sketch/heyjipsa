@@ -13,6 +13,7 @@
     "cap:ios": "npm run build && cap sync ios && cap open ios"
   },
   "dependencies": {
+    "@capacitor-community/speech-recognition": "^7.0.1",
     "@capacitor/android": "^8.4.0",
     "@capacitor/camera": "^8.2.0",
     "@capacitor/core": "^8.4.0",

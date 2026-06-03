@@ -2,6 +2,7 @@
 // 온보딩 미완료 시 랜딩으로 가드.
 import { Navigate, Outlet } from 'react-router-dom';
 import BottomNav from './BottomNav';
+import VoiceFab from './VoiceFab';
 import { STORAGE_KEYS, loadJSON } from '../utils/storage';
 
 export default function Layout() {
@@ -16,6 +17,7 @@ export default function Layout() {
         </main>
         <BottomNav />
       </div>
+      <VoiceFab />
     </div>
   );
 }
