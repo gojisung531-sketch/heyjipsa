@@ -151,6 +151,10 @@ export function buildChecklist(h: HouseholdConfig): {
   const categories = resolveCategories(config);
   const excluded = new Set(h.removedItems ?? []);
   const byPeriod = collectItemsByPeriod(categories, excluded);
+  // 사용자가 추가한 커스텀 집안일 합치기
+  for (const it of h.addedItems ?? []) {
+    if (byPeriod[it.period] && !excluded.has(it.id)) byPeriod[it.period].push(it);
+  }
   const flat = PERIODS.flatMap((p) => byPeriod[p]);
   return { byPeriod, flat, categories };
 }

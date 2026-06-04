@@ -2,6 +2,7 @@
 import { useMemo, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import type {
+  ChecklistItem,
   ChecklistState,
   HouseholdConfig,
   Period,
@@ -26,9 +27,8 @@ const PRIORITY_STYLE: Record<TodoPriority, string> = {
 };
 
 export default function Checklist() {
-  const config = loadJSON<HouseholdConfig | null>(
-    STORAGE_KEYS.HOUSEHOLD_CONFIG,
-    null,
+  const [config, setConfig] = useState<HouseholdConfig | null>(() =>
+    loadJSON<HouseholdConfig | null>(STORAGE_KEYS.HOUSEHOLD_CONFIG, null),
   );
 
   const byPeriod = useMemo(
@@ -44,6 +44,7 @@ export default function Checklist() {
     loadJSON<Todo[]>(STORAGE_KEYS.TODOS, []),
   );
   const [todoText, setTodoText] = useState('');
+  const [newChore, setNewChore] = useState('');
 
   if (!config || !byPeriod) return <Navigate to="/onboarding" replace />;
 
@@ -81,6 +82,30 @@ export default function Checklist() {
   const toggleTodo = (id: string) =>
     saveTodos(todos.map((t) => (t.id === id ? { ...t, done: !t.done } : t)));
   const removeTodo = (id: string) => saveTodos(todos.filter((t) => t.id !== id));
+
+  // 직접 추가한 집안일 (config.addedItems)
+  const saveConfig = (c: HouseholdConfig) => {
+    setConfig(c);
+    saveJSON(STORAGE_KEYS.HOUSEHOLD_CONFIG, c);
+  };
+  const addChore = () => {
+    const name = newChore.trim();
+    if (!name || tab === 'todos') return;
+    const item: ChecklistItem = {
+      id: uid('cust'),
+      name,
+      category: '직접 추가',
+      period: tab,
+    };
+    saveConfig({ ...config, addedItems: [...(config.addedItems ?? []), item] });
+    setNewChore('');
+  };
+  const removeChore = (id: string) =>
+    saveConfig({
+      ...config,
+      addedItems: (config.addedItems ?? []).filter((x) => x.id !== id),
+    });
+  const customIds = new Set((config.addedItems ?? []).map((a) => a.id));
 
   const isPeriod = tab !== 'todos';
   const items = isPeriod ? byPeriod[tab] : [];
@@ -142,11 +167,15 @@ export default function Checklist() {
           <ul className="space-y-2">
             {items.map((it) => {
               const done = checkedSet.has(it.id);
+              const custom = customIds.has(it.id);
               return (
-                <li key={it.id}>
+                <li
+                  key={it.id}
+                  className="flex items-center gap-1 rounded-2xl bg-white pr-2"
+                >
                   <button
                     onClick={() => toggle(it.id)}
-                    className="flex w-full items-center gap-3 rounded-2xl bg-white px-4 py-3 text-left transition active:scale-[0.99]"
+                    className="flex flex-1 items-center gap-3 px-4 py-3 text-left transition active:scale-[0.99]"
                   >
                     <span
                       className={`grid h-6 w-6 shrink-0 place-items-center rounded-full border-2 text-xs transition ${
@@ -158,10 +187,25 @@ export default function Checklist() {
                     <span className={`flex-1 ${done ? 'text-muted line-through' : 'text-ink'}`}>
                       {it.name}
                     </span>
+                  </button>
+                  {custom ? (
+                    <>
+                      <span className="rounded-full bg-mint/15 px-2 py-0.5 text-[11px] text-mint">
+                        추가
+                      </span>
+                      <button
+                        aria-label="삭제"
+                        onClick={() => removeChore(it.id)}
+                        className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-danger transition hover:bg-danger/10"
+                      >
+                        ✕
+                      </button>
+                    </>
+                  ) : (
                     <span className="rounded-full bg-light px-2.5 py-0.5 text-[11px] text-blue">
                       {it.category}
                     </span>
-                  </button>
+                  )}
                 </li>
               );
             })}
@@ -171,6 +215,30 @@ export default function Checklist() {
               </li>
             )}
           </ul>
+
+          {/* 집안일 직접 추가 (텍스트 / 음성) */}
+          <div className="mt-3 rounded-2xl bg-white p-3">
+            <VoiceButton
+              className="mb-2"
+              onText={(t) => setNewChore((prev) => (prev ? prev + ' ' + t : t))}
+            />
+            <div className="flex gap-2">
+              <input
+                value={newChore}
+                onChange={(e) => setNewChore(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && addChore()}
+                placeholder={`${PERIOD_LABELS[tab]}에 집안일 추가 (예: 화분 물주기)`}
+                className="flex-1 rounded-lg border border-light px-3 py-2 text-sm outline-none focus:border-blue"
+              />
+              <button
+                onClick={addChore}
+                disabled={!newChore.trim()}
+                className="rounded-xl bg-navy px-4 text-sm font-semibold text-white transition active:scale-[0.98] disabled:opacity-40"
+              >
+                추가
+              </button>
+            </div>
+          </div>
         </>
       ) : (
         <>

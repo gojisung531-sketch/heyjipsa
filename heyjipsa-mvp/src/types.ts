@@ -20,6 +20,7 @@ export interface HouseholdConfig {
     rental_appliances: boolean;
   };
   removedItems: string[]; // 사용자가 뺀 항목 id 목록 (opt-out)
+  addedItems?: ChecklistItem[]; // 사용자가 추가한 커스텀 집안일
   completedAt: string; // ISO date
 }
 

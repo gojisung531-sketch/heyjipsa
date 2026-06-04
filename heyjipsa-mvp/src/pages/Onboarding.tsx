@@ -2,6 +2,7 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type {
+  ChecklistItem,
   HouseholdConfig,
   HouseholdType,
   PetType,
@@ -9,9 +10,10 @@ import type {
   Period,
 } from '../types';
 import { Button, Toggle } from '../components/ui';
+import VoiceButton from '../components/VoiceButton';
 import { buildFullPreview } from '../utils/checklist';
-import { PERIODS, PERIOD_LABELS } from '../data/templates';
-import { STORAGE_KEYS, saveJSON } from '../utils/storage';
+import { PERIODS, PERIOD_LABELS, PERIOD_TAB_LABELS } from '../data/templates';
+import { STORAGE_KEYS, saveJSON, uid } from '../utils/storage';
 
 const TYPES: Array<{ id: HouseholdType; emoji: string; title: string; desc: string }> = [
   { id: 'single', emoji: '🧍', title: '1인 자취', desc: '혼자 살아요' },
@@ -42,6 +44,9 @@ export default function Onboarding() {
   const [car, setCar] = useState(false);
   const [rental, setRental] = useState(false);
   const [removed, setRemoved] = useState<Set<string>>(new Set());
+  const [added, setAdded] = useState<ChecklistItem[]>([]);
+  const [newText, setNewText] = useState('');
+  const [newPeriod, setNewPeriod] = useState<Period>('daily');
 
   // Step3 미리보기: 가구유형 + 옵션 기반 전체 항목
   const preview = useMemo(() => {
@@ -55,7 +60,7 @@ export default function Onboarding() {
   const totalCount = preview
     ? PERIODS.reduce((s, p) => s + preview[p].length, 0)
     : 0;
-  const keptCount = totalCount - removed.size;
+  const keptCount = totalCount - removed.size + added.length;
 
   const toggleRemove = (id: string) => {
     setRemoved((prev) => {
@@ -66,12 +71,25 @@ export default function Onboarding() {
     });
   };
 
+  const addCustom = () => {
+    const name = newText.trim();
+    if (!name) return;
+    setAdded((prev) => [
+      ...prev,
+      { id: uid('cust'), name, category: '직접 추가', period: newPeriod },
+    ]);
+    setNewText('');
+  };
+  const removeCustom = (id: string) =>
+    setAdded((prev) => prev.filter((x) => x.id !== id));
+
   const finish = () => {
     if (!type) return;
     const config: HouseholdConfig = {
       type,
       options: { pet, plants, car, rental_appliances: rental },
       removedItems: [...removed],
+      addedItems: added,
       completedAt: new Date().toISOString(),
     };
     saveJSON(STORAGE_KEYS.HOUSEHOLD_CONFIG, config);
@@ -244,15 +262,54 @@ export default function Onboarding() {
               )}
             </p>
 
+            {/* 직접 추가 (텍스트 / 음성) */}
+            <div className="mt-4 rounded-2xl bg-white p-3">
+              <p className="mb-2 text-xs font-bold text-navy">
+                + 우리 집만의 집안일 추가
+              </p>
+              <div className="no-scrollbar mb-2 flex gap-1.5 overflow-x-auto">
+                {PERIODS.map((p) => (
+                  <button
+                    key={p}
+                    onClick={() => setNewPeriod(p)}
+                    className={`shrink-0 rounded-full px-3 py-1 text-xs font-medium transition ${
+                      newPeriod === p ? 'bg-navy text-white' : 'bg-light text-muted'
+                    }`}
+                  >
+                    {PERIOD_TAB_LABELS[p]}
+                  </button>
+                ))}
+              </div>
+              <VoiceButton
+                className="mb-2"
+                onText={(t) => setNewText((prev) => (prev ? prev + ' ' + t : t))}
+              />
+              <div className="flex gap-2">
+                <input
+                  value={newText}
+                  onChange={(e) => setNewText(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && addCustom()}
+                  placeholder="예: 화분 물주기, 정수기 필터 갈기"
+                  className="flex-1 rounded-lg border border-light px-3 py-2 text-sm outline-none focus:border-blue"
+                />
+                <Button onClick={addCustom} disabled={!newText.trim()}>
+                  추가
+                </Button>
+              </div>
+            </div>
+
             <div className="mt-5 flex-1 space-y-5">
               {PERIODS.map((period: Period) => {
                 const items = preview[period].filter((it) => !removed.has(it.id));
-                if (items.length === 0) return null;
+                const customs = added.filter((a) => a.period === period);
+                if (items.length === 0 && customs.length === 0) return null;
                 return (
                   <section key={period}>
                     <h3 className="mb-2 text-sm font-bold text-blue">
                       {PERIOD_LABELS[period]}{' '}
-                      <span className="font-normal text-muted">{items.length}</span>
+                      <span className="font-normal text-muted">
+                        {items.length + customs.length}
+                      </span>
                     </h3>
                     <ul className="space-y-2">
                       {items.map((it) => (
@@ -267,6 +324,24 @@ export default function Onboarding() {
                           <button
                             aria-label="빼기"
                             onClick={() => toggleRemove(it.id)}
+                            className="grid h-6 w-6 place-items-center rounded-full text-danger transition hover:bg-danger/10"
+                          >
+                            ✕
+                          </button>
+                        </li>
+                      ))}
+                      {customs.map((it) => (
+                        <li
+                          key={it.id}
+                          className="flex items-center gap-2 rounded-xl bg-mint/10 px-4 py-2.5"
+                        >
+                          <span className="flex-1 text-sm text-ink">{it.name}</span>
+                          <span className="rounded-full bg-mint/20 px-2 py-0.5 text-[11px] text-mint">
+                            직접 추가
+                          </span>
+                          <button
+                            aria-label="삭제"
+                            onClick={() => removeCustom(it.id)}
                             className="grid h-6 w-6 place-items-center rounded-full text-danger transition hover:bg-danger/10"
                           >
                             ✕
