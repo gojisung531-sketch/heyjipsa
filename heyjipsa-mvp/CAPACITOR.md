@@ -11,16 +11,20 @@ OCR(tesseract.js)도 웹뷰에서 동작하며, 모델은 인터넷에서 받아
 
 ---
 
-## 0. 공통 준비물
+## 0. 공통 준비물 (다운로드/클론 직후 반드시)
 - Node.js 20.19+/22.12+ (이미 설치돼 있으면 OK)
-- 이 폴더에서 한 번: `npm install`
+- 이 폴더(`heyjipsa-mvp`)에서 **순서대로**:
+  ```bash
+  npm install
+  npm run cap:sync
+  ```
+  > `cap sync` 는 `.gitignore`로 제외된 생성 파일(`android/capacitor-cordova-android-plugins/` 등)을
+  > 다시 만들어요. **이걸 안 하면 Android Studio Gradle sync가 "cordova.variables.gradle 못 읽음" 에러**가 납니다.
 
 ## 1. 플랫폼 추가 (최초 1회)
 
 ```bash
-cd heyjipsa-mvp
-npm run build            # 웹 빌드(dist) 생성
-# android/ 는 레포에 이미 포함됨(아이콘·권한·플러그인 적용 완료) → 바로 빌드 가능
+# android/ 는 레포에 포함됨 → 위 npm run cap:sync 만 하면 바로 빌드 가능
 npx cap add ios          # ios/ 생성      (맥에서만, 최초 1회)
 ```
 
