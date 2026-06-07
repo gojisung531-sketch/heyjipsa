@@ -1,21 +1,10 @@
-// 장보기 리스트 저장/시드.
-// 초기 품목은 smart-cart-optimizer 의 품목 가격 DB(default_item_prices)에서
-// 자주 사는 생필품 위주로 시드한다.
+// 장보기 리스트 저장/조회.
+// 품목은 소모품 소비주기 파이프라인(syncAutoRestock)이 자동으로 채우거나,
+// 사용자가 직접/재구매 패턴에서 담는다. 그래서 초기값은 비어 있다.
 
 import type { ShoppingItem } from '../types';
 import { PLATFORM_DB } from '../data/platforms';
-import { STORAGE_KEYS, loadJSON, saveJSON, uid } from './storage';
-
-// 시드 품목: [품목명, 카테고리]
-const SEED: Array<[string, string]> = [
-  ['휴지', '생필품'],
-  ['물티슈', '생필품'],
-  ['세제', '생필품'],
-  ['생수', '식품'],
-  ['우유', '식품'],
-  ['계란', '식품'],
-  ['라면', '식품'],
-];
+import { STORAGE_KEYS, loadJSON, saveJSON } from './storage';
 
 /** 품목 가격 DB의 중간값으로 예상가 추정 (estimate_price와 동일 규칙) */
 export function estimatedPriceOf(name: string): number {
@@ -29,24 +18,12 @@ export function estimatedPriceOf(name: string): number {
   return 0;
 }
 
-function buildSeed(): ShoppingItem[] {
-  return SEED.map(([name, category]) => ({
-    id: uid('shop'),
-    name,
-    category,
-    estimatedPrice: estimatedPriceOf(name),
-    quantity: 1,
-    preferBrand: false,
-  }));
-}
-
-/** 저장된 장보기 리스트. 없으면(최초) 기본 품목을 시드해서 저장 후 반환. */
+/** 저장된 장보기 리스트. 없으면 빈 배열로 시작(소모품 파이프라인이 채움). */
 export function getShoppingList(): ShoppingItem[] {
   const raw = loadJSON<ShoppingItem[] | null>(STORAGE_KEYS.SHOPPING_LIST, null);
   if (raw && Array.isArray(raw)) return raw;
-  const seeded = buildSeed();
-  saveJSON(STORAGE_KEYS.SHOPPING_LIST, seeded);
-  return seeded;
+  saveJSON(STORAGE_KEYS.SHOPPING_LIST, []);
+  return [];
 }
 
 export function saveShoppingList(items: ShoppingItem[]): void {

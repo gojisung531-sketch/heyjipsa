@@ -11,6 +11,7 @@ export const STORAGE_KEYS = {
   ONBOARDING_DONE: 'heyjipsa_onboarded', // boolean
   TODOS: 'heyjipsa_todos', // Todo[] (voice-to-todo)
   PURCHASE_RECORDS: 'heyjipsa_purchases', // PurchaseRecord[] (구매 기록 → 패턴)
+  CONSUMABLES: 'heyjipsa_consumables', // Consumable[] (소모품 소비주기 → 자동 보충)
 } as const;
 
 export type StorageKey = (typeof STORAGE_KEYS)[keyof typeof STORAGE_KEYS];

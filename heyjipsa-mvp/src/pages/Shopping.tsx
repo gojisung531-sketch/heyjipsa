@@ -11,6 +11,7 @@ import {
   estimatedPriceOf,
 } from '../utils/shopping';
 import { optimize, fromShoppingItems } from '../utils/cartOptimizer';
+import { syncAutoRestock } from '../utils/consumables';
 import { parseCart } from '../utils/budgetGuard';
 import {
   loadPurchases,
@@ -84,8 +85,13 @@ export default function Shopping() {
 
 // ── 이번 주 장보기 (품목 관리 + 배송비 최적화) ──────────
 function ShoppingListTab() {
-  const [items, setItems] = useState<ShoppingItem[]>(() => getShoppingList());
+  // 진입 시 소모품 소비주기 예측을 장보기에 반영 (곧 떨어질 품목 자동 추가)
+  const [items, setItems] = useState<ShoppingItem[]>(() => {
+    syncAutoRestock();
+    return getShoppingList();
+  });
   const [newName, setNewName] = useState('');
+  const autoCount = items.filter((it) => it.auto).length;
 
   const update = (next: ShoppingItem[]) => {
     setItems(next);
@@ -137,12 +143,24 @@ function ShoppingListTab() {
       <p className="mb-3 text-sm text-muted">
         품목 {items.length}개 · 예상 {won(estTotal)}
       </p>
+      {autoCount > 0 && (
+        <p className="-mt-1 mb-3 rounded-xl bg-mint/10 px-3 py-2 text-xs font-medium text-mint">
+          🔁 소비 주기에 맞춰 소모품 {autoCount}개를 자동으로 담았어요
+        </p>
+      )}
 
       <ul className="space-y-2">
         {items.map((it) => (
           <li key={it.id} className="rounded-2xl bg-white p-3">
             <div className="flex items-center justify-between gap-2">
-              <span className="font-semibold text-ink">{it.name}</span>
+              <span className="font-semibold text-ink">
+                {it.name}
+                {it.auto && (
+                  <span className="ml-1.5 align-middle rounded-full bg-mint/15 px-2 py-0.5 text-[10px] font-medium text-mint">
+                    자동
+                  </span>
+                )}
+              </span>
               <button
                 onClick={() => toggleBrand(it.id)}
                 className={`rounded-full px-2.5 py-1 text-[11px] font-medium ${

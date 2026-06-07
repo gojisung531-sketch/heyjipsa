@@ -1,4 +1,4 @@
-// 집안일 체크리스트 `/checklist` — 주기별 집안일 + 내 할일(자연어 캡처)
+// 집안일 체크리스트 `/checklist` — 주기별 집안일 + 소모품 자동보충 + 내 할일
 import { useMemo, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import type {
@@ -12,13 +12,15 @@ import type {
 import { PageHeader } from '../components/Layout';
 import { ProgressBar } from '../components/ui';
 import VoiceButton from '../components/VoiceButton';
+import ConsumablesPanel from '../components/ConsumablesPanel';
 import { STORAGE_KEYS, loadJSON, saveJSON, uid } from '../utils/storage';
 import { buildChecklist } from '../utils/checklist';
 import { loadChecklistState, saveChecklistState } from '../utils/checklistState';
 import { parseBatch } from '../utils/todoParser';
+import { isDue, viewConsumables } from '../utils/consumables';
 import { PERIODS, PERIOD_TAB_LABELS, PERIOD_LABELS } from '../data/templates';
 
-type Tab = Period | 'todos';
+type Tab = Period | 'consumables' | 'todos';
 
 const PRIORITY_STYLE: Record<TodoPriority, string> = {
   상: 'bg-danger/10 text-danger',
@@ -47,6 +49,10 @@ export default function Checklist() {
   const [newChore, setNewChore] = useState('');
 
   if (!config || !byPeriod) return <Navigate to="/onboarding" replace />;
+
+  // tab을 주기 탭(Period)으로 좁히기 (consumables/todos면 null)
+  const periodTab: Period | null =
+    tab === 'consumables' || tab === 'todos' ? null : tab;
 
   const checkedSet = new Set(state.checked);
   const toggle = (id: string) => {
@@ -90,12 +96,12 @@ export default function Checklist() {
   };
   const addChore = () => {
     const name = newChore.trim();
-    if (!name || tab === 'todos') return;
+    if (!name || periodTab === null) return;
     const item: ChecklistItem = {
       id: uid('cust'),
       name,
       category: '직접 추가',
-      period: tab,
+      period: periodTab,
     };
     saveConfig({ ...config, addedItems: [...(config.addedItems ?? []), item] });
     setNewChore('');
@@ -107,10 +113,10 @@ export default function Checklist() {
     });
   const customIds = new Set((config.addedItems ?? []).map((a) => a.id));
 
-  const isPeriod = tab !== 'todos';
-  const items = isPeriod ? byPeriod[tab] : [];
+  const items = periodTab ? byPeriod[periodTab] : [];
   const doneInTab = items.filter((i) => checkedSet.has(i.id)).length;
   const openTodos = todos.filter((t) => !t.done).length;
+  const consumablesDue = viewConsumables().filter((c) => isDue(c.restock)).length;
 
   return (
     <div>
@@ -136,6 +142,17 @@ export default function Checklist() {
           );
         })}
         <button
+          onClick={() => setTab('consumables')}
+          className={`shrink-0 rounded-full px-4 py-2 text-sm font-semibold transition ${
+            tab === 'consumables' ? 'bg-navy text-white' : 'bg-white text-muted'
+          }`}
+        >
+          소모품{' '}
+          <span className={tab === 'consumables' ? 'text-white/70' : 'text-mint'}>
+            {consumablesDue}
+          </span>
+        </button>
+        <button
           onClick={() => setTab('todos')}
           className={`shrink-0 rounded-full px-4 py-2 text-sm font-semibold transition ${
             tab === 'todos' ? 'bg-navy text-white' : 'bg-white text-muted'
@@ -148,13 +165,13 @@ export default function Checklist() {
         </button>
       </div>
 
-      {isPeriod ? (
+      {periodTab ? (
         <>
           {/* 진행률 */}
           <div className="mb-4 rounded-2xl bg-white p-4">
             <div className="mb-2 flex items-center justify-between text-sm">
               <span className="font-semibold text-ink">
-                {PERIOD_LABELS[tab]} 진행률
+                {PERIOD_LABELS[periodTab]} 진행률
               </span>
               <span className="text-muted">
                 {doneInTab}/{items.length}
@@ -227,7 +244,7 @@ export default function Checklist() {
                 value={newChore}
                 onChange={(e) => setNewChore(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && addChore()}
-                placeholder={`${PERIOD_LABELS[tab]}에 집안일 추가 (예: 화분 물주기)`}
+                placeholder={`${PERIOD_LABELS[periodTab]}에 집안일 추가 (예: 화분 물주기)`}
                 className="flex-1 rounded-lg border border-light px-3 py-2 text-sm outline-none focus:border-blue"
               />
               <button
@@ -240,6 +257,8 @@ export default function Checklist() {
             </div>
           </div>
         </>
+      ) : tab === 'consumables' ? (
+        <ConsumablesPanel />
       ) : (
         <>
           {/* 자연어 빠른 추가 (음성/텍스트) */}

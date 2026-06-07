@@ -33,6 +33,7 @@ export interface ShoppingItem {
   quantity: number;
   preferBrand: boolean; // true면 브랜드 우선, false면 최저가 우선
   platform?: string;
+  auto?: boolean; // 소모품 소비주기 예측으로 자동 추가된 항목
 }
 
 // ── 집안일 체크리스트 ───────────────────────────────────
@@ -132,4 +133,16 @@ export interface PurchaseRecord {
   unitPrice: number; // 단가
   total: number; // 합계
   category: string; // 카테고리
+}
+
+// ── 소모품 (집안일 인식 → 소비주기 학습 → 자동 장보기 파이프라인) ──
+export interface Consumable {
+  id: string;
+  name: string; // 세제, 휴지, 생수 ...
+  category: string; // 생필품 / 식품 / 주방 / 위생 / 세탁 ...
+  cycleDays: number; // 기본 소비 주기 (학습 전 fallback)
+  lastBought: string; // 마지막 보충일 (YYYY-MM-DD)
+  fills: string[]; // 보충 일자 이력 (평균 주기 학습용)
+  lowSince: string | null; // "거의 다 썼어요" 표시일 → 즉시 보충 필요
+  source: 'default' | 'user';
 }

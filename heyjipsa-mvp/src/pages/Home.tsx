@@ -5,6 +5,7 @@ import { Card, ProgressBar } from '../components/ui';
 import { STORAGE_KEYS, loadJSON } from '../utils/storage';
 import { getShoppingList } from '../utils/shopping';
 import { optimize, fromShoppingItems } from '../utils/cartOptimizer';
+import { syncAutoRestock, viewConsumables, isDue } from '../utils/consumables';
 import { buildChecklist } from '../utils/checklist';
 import { loadChecklistState } from '../utils/checklistState';
 import { daysUntilDue } from '../utils/expenses';
@@ -25,6 +26,10 @@ export default function Home() {
     null,
   );
   if (!config) return <Navigate to="/onboarding" replace />;
+
+  // ── 소모품 소비주기 → 장보기 자동 반영 (곧 떨어질 품목 미리 담기) ──
+  syncAutoRestock();
+  const dueConsumables = viewConsumables().filter((c) => isDue(c.restock));
 
   // ── 장보기 요약 ──
   const shopping = getShoppingList();
@@ -81,6 +86,34 @@ export default function Home() {
               : '품목을 담고 배송비를 최적화해 보세요'}
         </div>
       </div>
+
+      {/* 카드 1.5: 소모품 자동 보충 레이더 */}
+      {dueConsumables.length > 0 && (
+        <Card onClick={() => navigate('/checklist')} className="mb-4">
+          <div className="flex items-center justify-between">
+            <p className="font-bold text-ink">🔁 소모품 자동 보충</p>
+            <span className="text-sm font-semibold text-mint">
+              {dueConsumables.length}개 담음
+            </span>
+          </div>
+          <p className="mt-1 text-xs text-muted">
+            소비 주기를 학습해 곧 떨어질 품목을 「이번 주 장보기」에 미리 담았어요.
+          </p>
+          <ul className="mt-3 flex flex-wrap gap-1.5">
+            {dueConsumables.map((c) => {
+              const d = c.restock.daysUntilNext;
+              return (
+                <li key={c.id} className="rounded-full bg-cream px-2.5 py-1 text-xs">
+                  <b className="text-ink">{c.name}</b>{' '}
+                  <span className={d < 0 ? 'text-danger' : 'text-blue'}>
+                    {d < 0 ? `${Math.abs(d)}일 지남` : d === 0 ? '오늘' : `D-${d}`}
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+        </Card>
+      )}
 
       {/* 카드 2: 오늘의 집안일 */}
       <Card onClick={() => navigate('/checklist')} className="mb-4">
