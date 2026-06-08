@@ -89,7 +89,7 @@ export default function Home() {
 
       {/* 카드 1.5: 소모품 자동 보충 레이더 */}
       {dueConsumables.length > 0 && (
-        <Card onClick={() => navigate('/checklist')} className="mb-4">
+        <Card onClick={() => navigate('/living')} className="mb-4">
           <div className="flex items-center justify-between">
             <p className="font-bold text-ink">🔁 소모품 자동 보충</p>
             <span className="text-sm font-semibold text-mint">
@@ -117,7 +117,7 @@ export default function Home() {
       )}
 
       {/* 카드 2: 오늘의 집안일 */}
-      <Card onClick={() => navigate('/checklist')} className="mb-4">
+      <Card onClick={() => navigate('/living')} className="mb-4">
         <div className="flex items-center justify-between">
           <p className="font-bold text-ink">✅ 오늘의 집안일</p>
           <span className="text-sm text-muted">

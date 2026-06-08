@@ -28,7 +28,7 @@ const PRIORITY_STYLE: Record<TodoPriority, string> = {
   하: 'bg-light text-muted',
 };
 
-export default function Checklist() {
+export default function Checklist({ embedded = false }: { embedded?: boolean }) {
   const [config, setConfig] = useState<HouseholdConfig | null>(() =>
     loadJSON<HouseholdConfig | null>(STORAGE_KEYS.HOUSEHOLD_CONFIG, null),
   );
@@ -129,7 +129,9 @@ export default function Checklist() {
 
   return (
     <div>
-      <PageHeader title="집안일 체크리스트" subtitle="할 일을 탭해서 완료하세요" />
+      {!embedded && (
+        <PageHeader title="집안일 체크리스트" subtitle="할 일을 탭해서 완료하세요" />
+      )}
 
       {/* 탭 */}
       <div className="no-scrollbar -mx-1 mb-4 flex gap-2 overflow-x-auto px-1">

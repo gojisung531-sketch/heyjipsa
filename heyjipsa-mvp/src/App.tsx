@@ -3,6 +3,8 @@ import Layout from './components/Layout';
 import Landing from './pages/Landing';
 import Onboarding from './pages/Onboarding';
 import Home from './pages/Home';
+import Living from './pages/Living';
+import More from './pages/More';
 import Shopping from './pages/Shopping';
 import Checklist from './pages/Checklist';
 import Chores from './pages/Chores';
@@ -20,6 +22,10 @@ export default function App() {
         {/* 앱 셸 (하단 네비 + 온보딩 가드) */}
         <Route element={<Layout />}>
           <Route path="/home" element={<Home />} />
+          {/* 통합 탭 */}
+          <Route path="/living" element={<Living />} />
+          <Route path="/more" element={<More />} />
+          {/* 기존 페이지 (라우트 유지: 직접 접근·홈 카드 링크) */}
           <Route path="/shopping" element={<Shopping />} />
           <Route path="/checklist" element={<Checklist />} />
           <Route path="/chores" element={<Chores />} />

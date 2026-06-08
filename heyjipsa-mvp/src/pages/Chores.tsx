@@ -45,7 +45,7 @@ function buildSamples(family: FamilyMember[]): ChoreEntry[] {
   }));
 }
 
-export default function Chores() {
+export default function Chores({ embedded = false }: { embedded?: boolean }) {
   const [family, setFamily] = useState<FamilyMember[]>(() =>
     loadJSON<FamilyMember[]>(STORAGE_KEYS.FAMILY_MEMBERS, []),
   );
@@ -92,10 +92,12 @@ export default function Chores() {
   if (editingFamily) {
     return (
       <div>
-        <PageHeader
-          title="가족 구성원"
-          subtitle="함께 사는 사람을 등록하세요. 첫 번째가 본인(나)이에요."
-        />
+        {!embedded && (
+          <PageHeader
+            title="가족 구성원"
+            subtitle="함께 사는 사람을 등록하세요. 첫 번째가 본인(나)이에요."
+          />
+        )}
         <div className="space-y-2">
           {draft.map((name, i) => (
             <div key={i} className="flex items-center gap-2">
@@ -143,7 +145,7 @@ export default function Chores() {
 
   return (
     <div>
-      <PageHeader title="가사노동 기록" />
+      {!embedded && <PageHeader title="가사노동 기록" />}
 
       {/* 가족 + 탭 */}
       <div className="mb-4 flex items-center justify-between">
