@@ -1,0 +1,63 @@
+name: Android Release (AAB)
+
+# Play Store 업로드용 서명된 AAB 빌드.
+# 사전 준비: 저장소 Settings → Secrets and variables → Actions 에 아래 4개 시크릿 등록
+#   KEYSTORE_BASE64    : 업로드 키스토어(.jks)를 base64로 인코딩한 문자열
+#   KEYSTORE_PASSWORD  : 키스토어 비밀번호
+#   KEY_ALIAS          : 키 별칭(alias)
+#   KEY_PASSWORD       : 키 비밀번호
+# 그 후 Actions 탭에서 이 워크플로를 수동 실행(Run workflow) → 아티팩트로 AAB 다운로드.
+
+on:
+  workflow_dispatch: {}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: heyjipsa-mvp
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build web + sync Android
+        run: |
+          npm run build
+          npx cap sync android
+
+      - name: Setup JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Decode upload keystore
+        run: echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/upload.jks"
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+
+      - name: Build signed release bundle (AAB)
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew bundleRelease --no-daemon --stacktrace
+        env:
+          KEYSTORE_FILE: ${{ runner.temp }}/upload.jks
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+
+      - name: Upload AAB artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: heyjipsa-release-aab
+          path: heyjipsa-mvp/android/app/build/outputs/bundle/release/app-release.aab
+          if-no-files-found: error
