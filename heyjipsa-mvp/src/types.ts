@@ -143,6 +143,8 @@ export interface Consumable {
   cycleDays: number; // 기본 소비 주기 (학습 전 fallback)
   lastBought: string; // 마지막 보충일 (YYYY-MM-DD)
   fills: string[]; // 보충 일자 이력 (평균 주기 학습용)
+  uses: string[]; // 사용 이벤트 일자 (연동 집안일 체크 등) — 사용빈도 학습용
+  linkedChoreIds: string[]; // 체크 시 '사용'으로 집계할 집안일(체크리스트) id
   lowSince: string | null; // "거의 다 썼어요" 표시일 → 즉시 보충 필요
   source: 'default' | 'user';
 }

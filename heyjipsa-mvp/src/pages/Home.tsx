@@ -108,6 +108,7 @@ export default function Home() {
                   <span className={d < 0 ? 'text-danger' : 'text-blue'}>
                     {d < 0 ? `${Math.abs(d)}일 지남` : d === 0 ? '오늘' : `D-${d}`}
                   </span>
+                  {c.restock.trend === 'fast' && ' 🔥'}
                 </li>
               );
             })}

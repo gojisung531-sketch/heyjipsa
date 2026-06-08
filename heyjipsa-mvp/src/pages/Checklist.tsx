@@ -17,7 +17,7 @@ import { STORAGE_KEYS, loadJSON, saveJSON, uid } from '../utils/storage';
 import { buildChecklist } from '../utils/checklist';
 import { loadChecklistState, saveChecklistState } from '../utils/checklistState';
 import { parseBatch } from '../utils/todoParser';
-import { isDue, viewConsumables } from '../utils/consumables';
+import { isDue, logChoreUse, syncAutoRestock, unlogChoreUse, viewConsumables } from '../utils/consumables';
 import { PERIODS, PERIOD_TAB_LABELS, PERIOD_LABELS } from '../data/templates';
 
 type Tab = Period | 'consumables' | 'todos';
@@ -56,12 +56,17 @@ export default function Checklist() {
 
   const checkedSet = new Set(state.checked);
   const toggle = (id: string) => {
+    const nowChecked = !checkedSet.has(id);
     const next = new Set(checkedSet);
-    if (next.has(id)) next.delete(id);
-    else next.add(id);
+    if (nowChecked) next.add(id);
+    else next.delete(id);
     const newState: ChecklistState = { checked: [...next], dailyDate: state.dailyDate };
     setState(newState);
     saveChecklistState(newState);
+    // 연동 소모품 '사용' 집계 → 곧 떨어지면 장보기에 자동 반영
+    if (nowChecked) logChoreUse(id);
+    else unlogChoreUse(id);
+    syncAutoRestock();
   };
 
   const saveTodos = (next: Todo[]) => {
@@ -117,6 +122,10 @@ export default function Checklist() {
   const doneInTab = items.filter((i) => checkedSet.has(i.id)).length;
   const openTodos = todos.filter((t) => !t.done).length;
   const consumablesDue = viewConsumables().filter((c) => isDue(c.restock)).length;
+  const allChores = PERIODS.flatMap((p) => byPeriod[p]).map((i) => ({
+    id: i.id,
+    name: i.name,
+  }));
 
   return (
     <div>
@@ -258,7 +267,7 @@ export default function Checklist() {
           </div>
         </>
       ) : tab === 'consumables' ? (
-        <ConsumablesPanel />
+        <ConsumablesPanel chores={allChores} />
       ) : (
         <>
           {/* 자연어 빠른 추가 (음성/텍스트) */}

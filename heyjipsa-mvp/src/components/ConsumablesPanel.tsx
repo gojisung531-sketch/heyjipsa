@@ -1,28 +1,34 @@
 // 소모품 소비주기 패널 — 집안일 체크리스트의 "소모품" 탭.
-// "샀어요"(주기 리셋·학습) / "거의 다 썼어요"(즉시 필요) 체크 →
-// 곧 떨어질 품목이 자동으로 「이번 주 장보기」에 담긴다.
+// 스마트 학습 결과(주기·신뢰도·사용빈도 보정)를 보여주고, 집안일과 연동한다.
 import { useState } from 'react';
 import VoiceButton from './VoiceButton';
-import type { ConsumableView } from '../utils/consumables';
+import type { ConsumableView, Restock } from '../utils/consumables';
 import {
   addConsumable,
   isDue,
+  linkChore,
   markBought,
   markLow,
   removeConsumable,
   syncAutoRestock,
+  unlinkChore,
   viewConsumables,
 } from '../utils/consumables';
 import { fmtCycle } from '../utils/purchaseAnalyzer';
 
-function dday(d: number): { text: string; tone: 'over' | 'soon' | 'ok' } {
-  if (d < 0) return { text: `${Math.abs(d)}일 지남`, tone: 'over' };
-  if (d === 0) return { text: '오늘', tone: 'soon' };
-  if (d <= 7) return { text: `D-${d}`, tone: 'soon' };
-  return { text: `D-${d}`, tone: 'ok' };
+export interface ChoreRef {
+  id: string;
+  name: string;
 }
 
-export default function ConsumablesPanel() {
+function dday(r: Restock): { text: string; tone: 'over' | 'soon' | 'ok' } {
+  const d = r.daysUntilNext;
+  const text = d < 0 ? `${Math.abs(d)}일 지남` : d === 0 ? '오늘' : `D-${d}`;
+  const tone = d < 0 ? 'over' : d <= r.leadDays ? 'soon' : 'ok';
+  return { text, tone };
+}
+
+export default function ConsumablesPanel({ chores = [] }: { chores?: ChoreRef[] }) {
   const [list, setList] = useState<ConsumableView[]>(() => {
     syncAutoRestock();
     return viewConsumables();
@@ -40,16 +46,17 @@ export default function ConsumablesPanel() {
     refresh();
   };
 
+  const choreName = (id: string) => chores.find((c) => c.id === id)?.name ?? id;
   const dueCount = list.filter((c) => isDue(c.restock)).length;
 
   return (
     <div>
       {/* 파이프라인 안내 */}
       <div className="mb-3 rounded-2xl bg-navy p-4 text-white">
-        <p className="text-sm font-bold">🔁 소모품 자동 보충</p>
+        <p className="text-sm font-bold">🔁 소모품 자동 보충 (스마트 학습)</p>
         <p className="mt-1 text-xs leading-relaxed text-white/80">
-          소비 주기를 학습해 <b>곧 떨어질 때</b> 알아서 「이번 주 장보기」에 담고,
-          쿠팡 무료배송 기준으로 묶어드려요.
+          보충·구매 주기에 <b>사용 빈도</b>까지 학습해 곧 떨어질 때 「이번 주 장보기」에
+          담고, 쿠팡 무료배송 기준으로 묶어드려요.
         </p>
         {dueCount > 0 && (
           <p className="mt-2 rounded-lg bg-white/15 px-3 py-1.5 text-xs font-medium">
@@ -60,8 +67,10 @@ export default function ConsumablesPanel() {
 
       <ul className="space-y-2">
         {list.map((c) => {
-          const dd = dday(c.restock.daysUntilNext);
-          const due = isDue(c.restock);
+          const r = c.restock;
+          const dd = dday(r);
+          const due = isDue(r);
+          const linkable = chores.filter((ch) => !c.linkedChoreIds.includes(ch.id));
           return (
             <li
               key={c.id}
@@ -76,8 +85,8 @@ export default function ConsumablesPanel() {
                     </span>
                   </p>
                   <p className="mt-0.5 text-xs text-muted">
-                    주기 {fmtCycle(c.restock.cycleDays)} ·{' '}
-                    {c.restock.learned ? '학습됨' : '기본'}
+                    주기 {fmtCycle(r.cycleDays)} · {r.learned ? '학습' : '기본'} · 신뢰도{' '}
+                    {r.confidence}
                   </p>
                 </div>
                 <span
@@ -93,11 +102,63 @@ export default function ConsumablesPanel() {
                 </span>
               </div>
 
+              {/* 사용 빈도 보정 이유 */}
+              {r.trend === 'fast' && (
+                <p className="mt-2 text-[11px] font-medium text-danger">
+                  🔥 최근 사용이 잦아 예상보다 빨리 소진돼요
+                </p>
+              )}
+              {r.trend === 'slow' && (
+                <p className="mt-2 text-[11px] font-medium text-blue">
+                  🐢 사용이 뜸해 여유가 더 있어요
+                </p>
+              )}
+
               {due && (
                 <p className="mt-2 rounded-lg bg-mint/10 px-2.5 py-1 text-[11px] font-medium text-mint">
                   🛒 「이번 주 장보기」에 자동으로 담겼어요
                 </p>
               )}
+
+              {/* 연동 집안일 */}
+              <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                {c.linkedChoreIds.map((id) => (
+                  <span
+                    key={id}
+                    className="inline-flex items-center gap-1 rounded-full bg-cream px-2 py-0.5 text-[11px] text-ink"
+                  >
+                    🔗 {choreName(id)}
+                    <button
+                      aria-label="연동 해제"
+                      onClick={() => {
+                        unlinkChore(c.id, id);
+                        refresh();
+                      }}
+                      className="text-muted hover:text-danger"
+                    >
+                      ✕
+                    </button>
+                  </span>
+                ))}
+                {linkable.length > 0 && (
+                  <select
+                    value=""
+                    onChange={(e) => {
+                      if (!e.target.value) return;
+                      linkChore(c.id, e.target.value);
+                      refresh();
+                    }}
+                    className="rounded-full border border-dashed border-light px-2 py-0.5 text-[11px] text-muted outline-none"
+                  >
+                    <option value="">+ 집안일 연동</option>
+                    {linkable.map((ch) => (
+                      <option key={ch.id} value={ch.id}>
+                        {ch.name}
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </div>
 
               <div className="mt-3 flex items-center gap-2">
                 <button
